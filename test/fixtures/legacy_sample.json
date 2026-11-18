@@ -1,0 +1,114 @@
+{
+  "autoSaveEnabled": true,
+  "entries": [
+    {
+      "id": "e-1",
+      "date": "2025-03-14",
+      "type": "income",
+      "transactionNumber": "1",
+      "clientId": "c-1",
+      "description": "Konzert im Kulturhaus",
+      "category": "Musik",
+      "amount": 450,
+      "tags": [],
+      "billable": false,
+      "depreciation": {"enabled": false, "method": "linear", "rate": 20, "threshold": 0, "startYear": 2025, "acquisitionValue": 450, "autoCreateEntries": true},
+      "depreciationMeta": {},
+      "sourceEntryId": "",
+      "excludeFromReports": false,
+      "expenseItems": [],
+      "attachments": [
+        {"id": "a-1", "kind": "invoice", "originalFileName": "Rechnung Kulturhaus.pdf", "storedFileName": "2025/2025-03-14 Rechnung Kulturhaus.pdf", "year": "2025", "size": 10, "addedAt": "2025-03-14T10:00:00.000Z"}
+      ],
+      "attachmentDescription": "",
+      "sourceType": "order-payment",
+      "sourceOrderId": "o-1",
+      "createdAt": "2025-03-14T10:00:00.000Z",
+      "updatedAt": "2025-03-14T10:00:00.000Z"
+    },
+    {
+      "id": "e-2",
+      "date": "2025-04-02",
+      "type": "expense",
+      "transactionNumber": "2",
+      "clientId": "",
+      "description": "Zug nach Bern",
+      "category": "Spesen",
+      "amount": 38.2,
+      "tags": [],
+      "billable": false,
+      "depreciation": {"enabled": false, "method": "linear", "rate": 20, "threshold": 0, "startYear": 2025, "acquisitionValue": 38.2, "autoCreateEntries": true},
+      "depreciationMeta": {},
+      "sourceEntryId": "",
+      "excludeFromReports": false,
+      "expenseItems": [{"id": "x-1", "category": "Fahrspesen", "description": "", "amount": 38.2}],
+      "attachments": [
+        {"id": "a-2", "kind": "receipt", "originalFileName": "Billett.pdf", "storedFileName": "2025/2025-04-02 Billett.pdf", "year": "2025", "size": 10, "addedAt": "2025-04-02T10:00:00.000Z"}
+      ],
+      "attachmentDescription": "",
+      "sourceType": "",
+      "sourceOrderId": "",
+      "createdAt": "2025-04-02T10:00:00.000Z",
+      "updatedAt": "2025-04-02T10:00:00.000Z"
+    },
+    {
+      "id": "e-3",
+      "date": "2026-01-20",
+      "type": "expense",
+      "transactionNumber": "3",
+      "clientId": "",
+      "description": "Einkauf Bürobedarf",
+      "category": "Materialaufwand",
+      "amount": 100.1,
+      "tags": [],
+      "billable": false,
+      "depreciation": {"enabled": false, "method": "linear", "rate": 20, "threshold": 0, "startYear": 2026, "acquisitionValue": 100.1, "autoCreateEntries": true},
+      "depreciationMeta": {},
+      "sourceEntryId": "",
+      "excludeFromReports": false,
+      "expenseItems": [
+        {"id": "x-2", "category": "Papier", "description": "Druckerpapier", "amount": 60.05},
+        {"id": "x-3", "category": "Materialaufwand", "description": "Stifte", "amount": 40.05}
+      ],
+      "attachments": [],
+      "attachmentDescription": "",
+      "sourceType": "",
+      "sourceOrderId": "",
+      "createdAt": "2026-01-20T10:00:00.000Z",
+      "updatedAt": "2026-01-20T10:00:00.000Z"
+    }
+  ],
+  "clients": [
+    {"id": "c-1", "firstName": "Erika", "lastName": "Muster", "company": "", "email": "erika@example.com", "phone": "", "country": "Schweiz", "street": "Beispielweg 12a", "zip": "3000", "city": "Bern", "notes": "", "createdAt": "2025-01-01T10:00:00.000Z", "updatedAt": "2025-01-01T10:00:00.000Z"}
+  ],
+  "products": [
+    {"id": "p-1", "name": "Gig", "description": "Pauschalgage für Konzert", "category": "Musik", "price": 300, "pricingType": "flat", "createdAt": "2025-01-01T10:00:00.000Z", "updatedAt": "2025-01-01T10:00:00.000Z"},
+    {"id": "p-2", "name": "Flyer", "description": "Gestaltung", "category": "Grafik", "price": 75, "pricingType": "hourly", "createdAt": "2025-01-01T10:00:00.000Z", "updatedAt": "2025-01-01T10:00:00.000Z"}
+  ],
+  "orders": [
+    {"id": "o-1", "orderNumber": "A-2025-0001", "invoiceNumber": "XYZ-2025-0001", "invoiceFilePath": "C:\\Beispiel\\XYZ-2025-0001.pdf", "invoicedAt": "2025-03-01T10:00:00.000Z", "title": "Konzert Kulturhaus", "clientId": "c-1", "paidAt": "2025-03-14", "paidEntryId": "e-1", "status": "paid",
+     "items": [{"id": "i-1", "productId": "p-1", "name": "Gig", "description": "Pauschalgage", "category": "Musik", "pricingType": "flat", "quantity": 1, "unitPrice": 450}],
+     "notes": "", "createdAt": "2025-02-01T10:00:00.000Z", "updatedAt": "2025-03-14T10:00:00.000Z"}
+  ],
+  "tasks": [
+    {"id": "t-1", "title": "Offerte schicken", "clientId": "c-1", "dueDate": "2025-02-10", "notes": "", "completed": true, "completedAt": "2025-02-09T10:00:00.000Z", "createdAt": "2025-02-01T10:00:00.000Z", "updatedAt": "2025-02-09T10:00:00.000Z"}
+  ],
+  "onboardingCompleted": true,
+  "onboardingCompletedAt": "2025-01-01T10:00:00.000Z",
+  "company": {
+    "ownerName": "Max Beispiel", "companyName": "Beispiel Musik", "email": "max@example.com", "phone": "+41 00 000 00 00", "website": "www.example.com",
+    "street": "Musterstrasse 5", "zip": "6000", "city": "Luzern", "country": "Schweiz", "vatNumber": "", "invoicePrefix": "XYZ-",
+    "bankName": "Beispielbank", "iban": "CH9300762011623852957", "bic": "", "paymentTermsDays": 30,
+    "logoDataUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4=", "logoName": "logo.svg"
+  },
+  "invoiceSettings": {
+    "qrEnabled": true, "invoiceFont": "roboto-slab", "invoiceLogoDataUrl": "", "invoiceLogoName": "", "invoiceLogoType": "",
+    "signatureDataUrl": "", "signatureName": "", "signatureType": "", "qrCreditorNameSource": "owner", "qrCreditorCustomName": "",
+    "invoicePrefix": "XYZ-", "invoiceTitle": "Rechnung", "paymentInfoTitle": "Zahlungsinformationen", "dueDateTitle": "Zahlbar bis",
+    "totalTitle": "Gesamtbetrag", "contactTitle": "Kontakt", "bankName": "Beispielbank", "iban": "CH93 0076 2011 6238 5295 7", "bic": "",
+    "paymentTermsDays": 30, "qrMessageTemplate": "Rechnung {invoiceNumber}", "footerNote": "Vielen Dank für den Auftrag.\n{deinName}",
+    "accentColor": "#01aecb", "template": "standard"
+  },
+  "dashboardLayout": [{"id": "cashflow", "visible": true, "size": 2}],
+  "taskSettings": {"deadlineRules": [{"id": "yellow", "label": "Gelb", "days": 7, "color": "#ffcc44"}]}
+}

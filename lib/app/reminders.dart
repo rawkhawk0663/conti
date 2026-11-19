@@ -8,6 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../core/conti_state.dart';
 import '../core/dates.dart';
 import '../core/model/crm.dart';
+import '../core/money.dart';
 import 'error_log.dart';
 import 'l10n.dart';
 
@@ -99,6 +100,21 @@ class Reminders {
         if (r.days > 0) add(r.days, tr('Frist in ${r.days} Tagen', 'Due in ${r.days} days'));
       }
       add(0, tr('Heute fällig', 'Due today'));
+    }
+    // Rechnungen: am Tag nach der Frist, falls noch nicht bezahlt.
+    for (final o in s.orders.where((o) => o.status == OrderStatus.invoiced && o.dueDate != null)) {
+      final day = o.dueDate!.add(const Duration(days: 1));
+      final at = DateTime(day.year, day.month, day.day, hour);
+      if (at.isAfter(t) && at.isBefore(limit)) {
+        out.add(
+          PlannedReminder(
+            _id(o.id, -1),
+            at,
+            tr('Rechnung überfällig', 'Invoice overdue'),
+            '${o.invoiceNumber} · ${s.client(o.clientId)?.displayName ?? o.title} · CHF ${Money.format(o.total)}',
+          ),
+        );
+      }
     }
     out.sort((a, b) => a.at.compareTo(b.at));
     return out.take(maxPlanned).toList();

@@ -11,6 +11,7 @@ import 'accounts_page.dart';
 import 'business_page.dart';
 import 'categories_page.dart';
 import 'data_page.dart';
+import 'invoice_settings_page.dart';
 import 'work_settings_page.dart';
 
 /// Einstellungen: eine Liste von Bereichen, jeder öffnet eine eigene Seite.
@@ -69,6 +70,13 @@ class SettingsScreen extends StatelessWidget {
                       tr('Kategorien', 'Categories'),
                       tr('${s.categories.length} Kategorien', '${s.categories.length} categories'),
                       const CategoriesPage(),
+                    ),
+                    tile(
+                      Icons.request_quote_outlined,
+                      c.mint,
+                      tr('Rechnungen', 'Invoices'),
+                      tr('Nummern, Texte, Schrift, Vorschau', 'Numbers, texts, font, preview'),
+                      const InvoiceSettingsPage(),
                     ),
                     tile(
                       Icons.notifications_active_outlined,

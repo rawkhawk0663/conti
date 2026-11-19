@@ -323,6 +323,7 @@ class Order implements Synced {
     this.lessonsTotal,
     List<Session>? sessions,
     this.followUpId,
+    List<DateTime>? reminders,
     this.clientId,
     this.status = OrderStatus.open,
     List<OrderItem>? items,
@@ -338,6 +339,7 @@ class Order implements Synced {
     this.deleted = false,
   }) : items = items ?? [],
        sessions = sessions ?? [],
+       reminders = reminders ?? [],
        createdAt = createdAt ?? DateTime.now().toUtc(),
        updatedAt = updatedAt ?? DateTime.now().toUtc();
 
@@ -362,6 +364,12 @@ class Order implements Synced {
   String? followUpId;
 
   bool get followedUp => followUpId != null;
+
+  /// Daten der verschickten Zahlungserinnerungen.
+  List<DateTime> reminders;
+
+  /// Verrechnet, aber nach der Frist noch nicht bezahlt.
+  bool overdue(DateTime today) => status == OrderStatus.invoiced && dueDate != null && dueDate!.isBefore(today);
   bool get isSubscription => lessonsTotal != null;
   int get lessonsUsed => sessions.length;
   int get lessonsLeft => (lessonsTotal ?? 0) - sessions.length;
@@ -400,6 +408,7 @@ class Order implements Synced {
     if (lessonsTotal != null) 'lessonsTotal': lessonsTotal,
     if (sessions.isNotEmpty) 'sessions': [for (final x in sessions) x.toJson()],
     if (followUpId != null) 'followUpId': followUpId,
+    if (reminders.isNotEmpty) 'reminders': [for (final d in reminders) Day.toKey(d)],
     if (clientId != null) 'clientId': clientId,
     'status': status.name,
     'items': [for (final i in items) i.toJson()],
@@ -424,6 +433,10 @@ class Order implements Synced {
     lessonsTotal: j['lessonsTotal'] is num ? j.integer('lessonsTotal') : null,
     sessions: [for (final x in j.maps('sessions')) Session.fromJson(x)],
     followUpId: j.strOrNull('followUpId'),
+    reminders: [
+      for (final x in (j['reminders'] is List ? j['reminders'] as List : const []))
+        if (Day.parse('$x') != null) Day.parse('$x')!,
+    ],
     clientId: j.strOrNull('clientId'),
     status: OrderStatus.parse(j.strOrNull('status')),
     items: [for (final i in j.maps('items')) OrderItem.fromJson(i)],

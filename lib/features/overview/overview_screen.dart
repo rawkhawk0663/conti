@@ -12,6 +12,7 @@ import '../sync/sync_page.dart';
 import '../entries/entry_tile.dart';
 import '../orders/order_editor.dart';
 import '../orders/order_widgets.dart';
+import '../../core/model/crm.dart';
 import '../tasks/tasks.dart';
 
 /// Startseite: Gewinn des Jahres, Konten, Monate, letzte Buchungen.
@@ -37,12 +38,18 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final name = s.business.displayName;
 
     final cards = <Widget>[
-      _ProfitCard(year: year, income: income, expenses: expenses, profit: profit),
+      _ProfitCard(
+        year: year,
+        income: income,
+        expenses: expenses,
+        profit: profit,
+      ),
       _AccountsCard(),
       _MonthsCard(year: year),
       _CategoriesCard(year: year),
       _RecentCard(onShowAll: widget.onShowEntries),
       const _TasksCard(),
+      const _InvoicesCard(),
     ];
 
     return Scaffold(
@@ -57,7 +64,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 child: DropdownButton<int>(
                   value: year,
                   borderRadius: BorderRadius.circular(14),
-                  items: [for (final y in years) DropdownMenuItem(value: y, child: Text('$y'))],
+                  items: [
+                    for (final y in years)
+                      DropdownMenuItem(value: y, child: Text('$y')),
+                  ],
                   onChanged: (y) => setState(() => _year = y),
                 ),
               ),
@@ -79,7 +89,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
               itemCount: cards.length,
               separatorBuilder: (_, _) => const SizedBox(height: 14),
               // Handy: Aufgaben gleich nach dem Gewinn.
-              itemBuilder: (_, i) => cards[const [0, 5, 1, 2, 3, 4][i]],
+              itemBuilder: (_, i) => cards[const [0, 6, 5, 1, 2, 3, 4][i]],
             );
           }
           // Zwei Spalten: links die Zahlen, rechts Konten und Letzte Buchungen.
@@ -90,12 +100,29 @@ class _OverviewScreenState extends State<OverviewScreen> {
               children: [
                 Expanded(
                   flex: 3,
-                  child: Column(children: [cards[0], const SizedBox(height: 14), cards[2], const SizedBox(height: 14), cards[3]]),
+                  child: Column(
+                    children: [
+                      cards[0],
+                      const SizedBox(height: 14),
+                      cards[2],
+                      const SizedBox(height: 14),
+                      cards[3],
+                    ],
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   flex: 2,
-                  child: Column(children: [cards[5], const SizedBox(height: 14), cards[1], const SizedBox(height: 14), cards[4]]),
+                  child: Column(
+                    children: [
+                      cards[6],
+                      cards[5],
+                      const SizedBox(height: 14),
+                      cards[1],
+                      const SizedBox(height: 14),
+                      cards[4],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -107,7 +134,12 @@ class _OverviewScreenState extends State<OverviewScreen> {
 }
 
 class _ProfitCard extends StatelessWidget {
-  const _ProfitCard({required this.year, required this.income, required this.expenses, required this.profit});
+  const _ProfitCard({
+    required this.year,
+    required this.income,
+    required this.expenses,
+    required this.profit,
+  });
   final int year, income, expenses, profit;
 
   @override
@@ -122,7 +154,11 @@ class _ProfitCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              GradientRing(value: ratio, colors: c.pink, label: income <= 0 ? '–' : '${(ratio * 100).round()}%'),
+              GradientRing(
+                value: ratio,
+                colors: c.pink,
+                label: income <= 0 ? '–' : '${(ratio * 100).round()}%',
+              ),
               const SizedBox(width: 20),
               Expanded(
                 child: Column(
@@ -131,7 +167,9 @@ class _ProfitCard extends StatelessWidget {
                     BigNumber(Money.format(profit)),
                     const SizedBox(height: 6),
                     Text(
-                      profit >= 0 ? tr('Gewinn in CHF', 'Profit in CHF') : tr('Verlust in CHF', 'Loss in CHF'),
+                      profit >= 0
+                          ? tr('Gewinn in CHF', 'Profit in CHF')
+                          : tr('Verlust in CHF', 'Loss in CHF'),
                       style: TextStyle(color: c.muted),
                     ),
                   ],
@@ -140,9 +178,19 @@ class _ProfitCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 22),
-          _BarRow(label: tr('Einnahmen', 'Income'), value: income, max: maxV, colors: c.mint),
+          _BarRow(
+            label: tr('Einnahmen', 'Income'),
+            value: income,
+            max: maxV,
+            colors: c.mint,
+          ),
           const SizedBox(height: 14),
-          _BarRow(label: tr('Ausgaben', 'Expenses'), value: expenses, max: maxV, colors: c.sun),
+          _BarRow(
+            label: tr('Ausgaben', 'Expenses'),
+            value: expenses,
+            max: maxV,
+            colors: c.sun,
+          ),
         ],
       ),
     );
@@ -150,7 +198,12 @@ class _ProfitCard extends StatelessWidget {
 }
 
 class _BarRow extends StatelessWidget {
-  const _BarRow({required this.label, required this.value, required this.max, required this.colors});
+  const _BarRow({
+    required this.label,
+    required this.value,
+    required this.max,
+    required this.colors,
+  });
   final String label;
   final int value, max;
   final List<Color> colors;
@@ -165,7 +218,10 @@ class _BarRow extends StatelessWidget {
             Expanded(child: CapsLabel(label)),
             Text(
               Money.format(value),
-              style: TextStyle(color: context.conti.muted, fontFeatures: const [FontFeature.tabularFigures()]),
+              style: TextStyle(
+                color: context.conti.muted,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ],
         ),
@@ -188,7 +244,10 @@ class _AccountsCard extends StatelessWidget {
         children: [
           BigNumber(Money.format(s.totalBalance), size: 30),
           const SizedBox(height: 4),
-          Text(tr('Total heute', 'Total today'), style: TextStyle(color: context.conti.muted)),
+          Text(
+            tr('Total heute', 'Total today'),
+            style: TextStyle(color: context.conti.muted),
+          ),
           const SizedBox(height: 14),
           for (final a in accounts)
             Padding(
@@ -200,7 +259,8 @@ class _AccountsCard extends StatelessWidget {
                 ],
               ),
             ),
-          if (accounts.isEmpty) Text(tr('Noch keine Konten.', 'No accounts yet.')),
+          if (accounts.isEmpty)
+            Text(tr('Noch keine Konten.', 'No accounts yet.')),
         ],
       ),
     );
@@ -221,7 +281,10 @@ class _MonthsCard extends StatelessWidget {
         Container(
           width: 10,
           height: 10,
-          decoration: BoxDecoration(gradient: LinearGradient(colors: colors), shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: colors),
+            shape: BoxShape.circle,
+          ),
         ),
         const SizedBox(width: 6),
         Text(text, style: TextStyle(color: c.muted, fontSize: 13)),
@@ -229,7 +292,13 @@ class _MonthsCard extends StatelessWidget {
     );
     return SectionCard(
       title: tr('Monate', 'Months'),
-      trailing: Wrap(spacing: 14, children: [legend(c.mint, tr('Einnahmen', 'Income')), legend(c.sun, tr('Ausgaben', 'Expenses'))]),
+      trailing: Wrap(
+        spacing: 14,
+        children: [
+          legend(c.mint, tr('Einnahmen', 'Income')),
+          legend(c.sun, tr('Ausgaben', 'Expenses')),
+        ],
+      ),
       child: MonthBars(
         income: [for (var m = 1; m <= 12; m++) s.incomeOf(year, month: m)],
         expenses: [for (var m = 1; m <= 12; m++) s.expensesOf(year, month: m)],
@@ -247,10 +316,16 @@ class _CategoriesCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = ContiScope.of(context);
     final c = context.conti;
-    final exp = s.totalsByTopCategory(year, income: false).entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final inc = s.totalsByTopCategory(year, income: true).entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final exp = s.totalsByTopCategory(year, income: false).entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final inc = s.totalsByTopCategory(year, income: true).entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     if (exp.isEmpty && inc.isEmpty) return const SizedBox.shrink();
-    Widget block(String title, List<MapEntry<String, int>> rows, List<Color> colors) {
+    Widget block(
+      String title,
+      List<MapEntry<String, int>> rows,
+      List<Color> colors,
+    ) {
       final max = rows.isEmpty ? 1 : rows.first.value;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -265,8 +340,19 @@ class _CategoriesCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: Text(s.categoryLabel(r.key), overflow: TextOverflow.ellipsis)),
-                      Text(Money.format(r.value), style: TextStyle(color: c.muted, fontFeatures: const [FontFeature.tabularFigures()])),
+                      Expanded(
+                        child: Text(
+                          s.categoryLabel(r.key),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        Money.format(r.value),
+                        style: TextStyle(
+                          color: c.muted,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 5),
@@ -299,13 +385,17 @@ class _RecentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = ContiScope.of(context);
-    final recent = s.entries..sort((a, b) {
-      final d = b.date.compareTo(a.date);
-      return d != 0 ? d : b.createdAt.compareTo(a.createdAt);
-    });
+    final recent = s.entries
+      ..sort((a, b) {
+        final d = b.date.compareTo(a.date);
+        return d != 0 ? d : b.createdAt.compareTo(a.createdAt);
+      });
     return SectionCard(
       title: tr('Letzte Buchungen', 'Latest entries'),
-      trailing: TextButton(onPressed: onShowAll, child: Text(tr('Alle', 'All'))),
+      trailing: TextButton(
+        onPressed: onShowAll,
+        child: Text(tr('Alle', 'All')),
+      ),
       padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
       child: recent.isEmpty
           ? Padding(
@@ -321,7 +411,10 @@ class _RecentCard extends StatelessWidget {
           : Column(
               children: [
                 for (final e in recent.take(6))
-                  EntryTile(entry: e, onTap: () => openEntryEditor(context, entry: e)),
+                  EntryTile(
+                    entry: e,
+                    onTap: () => openEntryEditor(context, entry: e),
+                  ),
               ],
             ),
     );
@@ -341,8 +434,13 @@ class _TasksCard extends StatelessWidget {
     return SectionCard(
       title: tr('Aufgaben', 'Tasks'),
       trailing: TextButton(
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TasksScreen())),
-        child: Text(open.isEmpty ? tr('Öffnen', 'Open') : tr('Alle (${open.length})', 'All (${open.length})')),
+        onPressed: () => Navigator.of(context)
+            .push(MaterialPageRoute<void>(builder: (_) => const TasksScreen())),
+        child: Text(
+          open.isEmpty
+              ? tr('Öffnen', 'Open')
+              : tr('Alle (${open.length})', 'All (${open.length})'),
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
       child: Column(
@@ -358,8 +456,14 @@ class _TasksCard extends StatelessWidget {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    gradient: LinearGradient(colors: [for (final x in c.sun) x.withValues(alpha: 0.16)]),
-                    border: Border.all(color: c.sun.last.withValues(alpha: 0.6)),
+                    gradient: LinearGradient(
+                      colors: [
+                        for (final x in c.sun) x.withValues(alpha: 0.16),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: c.sun.last.withValues(alpha: 0.6),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -369,7 +473,12 @@ class _TasksCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(tr('Abo aufgebraucht', 'Lesson pack used up'), style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text(
+                              tr('Abo aufgebraucht', 'Lesson pack used up'),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             Text(
                               '${s.client(o.clientId)?.displayName ?? o.title} · ${o.lessonsUsed}/${o.lessonsTotal}',
                               style: TextStyle(color: c.muted, fontSize: 13),
@@ -386,12 +495,19 @@ class _TasksCard extends StatelessWidget {
           if (open.isEmpty && abos.isEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Text(tr('Alles erledigt.', 'All done.'), style: TextStyle(color: c.muted)),
+              child: Text(
+                tr('Alles erledigt.', 'All done.'),
+                style: TextStyle(color: c.muted),
+              ),
             ),
           for (final t in open.take(5)) TaskTile(task: t),
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton.icon(onPressed: () => editTask(context), icon: const Icon(Icons.add), label: Text(tr('Aufgabe', 'Task'))),
+            child: TextButton.icon(
+              onPressed: () => editTask(context),
+              icon: const Icon(Icons.add),
+              label: Text(tr('Aufgabe', 'Task')),
+            ),
           ),
         ],
       ),
@@ -399,5 +515,83 @@ class _TasksCard extends StatelessWidget {
   }
 }
 
+/// Verrechnete, noch nicht bezahlte Rechnungen (überfällige zuerst).
+/// Ohne offene Rechnungen erscheint die Karte nicht.
+class _InvoicesCard extends StatelessWidget {
+  const _InvoicesCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = ContiScope.of(context);
+    final c = context.conti;
+    final today = Day.today();
+    final open =
+        s.orders.where((o) => o.status == OrderStatus.invoiced).toList()
+          ..sort((a, b) => (a.dueDate ?? today).compareTo(b.dueDate ?? today));
+    if (open.isEmpty) return const SizedBox.shrink();
+    final sum = open.fold(0, (a, o) => a + o.total);
+    final overdue = open.where((o) => o.overdue(today)).length;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: SectionCard(
+        title: tr('Offene Rechnungen', 'Open invoices'),
+        trailing: Text(
+          'CHF ${Money.format(sum)}',
+          style: TextStyle(
+            color: overdue > 0 ? c.minus : c.muted,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+        child: Column(
+          children: [
+            for (final o in open.take(6))
+              ListTile(
+                dense: true,
+                leading: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: o.overdue(today) ? c.sun : c.sky,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  '${o.invoiceNumber} · ${s.client(o.clientId)?.displayName ?? o.title}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  o.dueDate == null
+                      ? ''
+                      : o.overdue(today)
+                      ? tr(
+                          'seit ${Day.short(o.dueDate!)} überfällig',
+                          'overdue since ${Day.short(o.dueDate!)}',
+                        )
+                      : tr(
+                          'zahlbar bis ${Day.short(o.dueDate!)}',
+                          'payable by ${Day.short(o.dueDate!)}',
+                        ),
+                  style: TextStyle(color: o.overdue(today) ? c.minus : c.muted),
+                ),
+                trailing: Text(
+                  Money.format(o.total),
+                  style: const TextStyle(
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+                onTap: () => openOrderEditor(context, order: o),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Neue Buchung mit voreingestellter Art (für Schnellknöpfe).
-Future<void> newEntryOf(BuildContext context, EntryKind kind) => openEntryEditor(context, kind: kind);
+Future<void> newEntryOf(BuildContext context, EntryKind kind) =>
+    openEntryEditor(context, kind: kind);

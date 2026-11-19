@@ -25,6 +25,8 @@ Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständi
 - **Produkte** mit Preis und Einheit (pauschal, pro Stunde, pro Lektion, pro Stück).
 - **Aufträge** jeder Art (Gig, Lektionen-Abo, Grafik …) mit Positionen und Stand von „offen“ bis „bezahlt“. Auftragsarten legst du selbst an.
 - **Abos** mit frei wählbarer Anzahl Lektionen: Lektionen abhaken, Conti zählt mit und erinnert, wenn das Abo aufgebraucht ist. Mit einem Knopf entsteht das nächste Abo.
+- **Rechnungen als PDF mit Schweizer QR-Zahlteil:** aus einem Auftrag mit einem Knopf. Logo, Absender, Empfänger, Positionen, Dankeszeile mit Unterschrift und Zahlteil mit Empfangsschein. Normale IBAN mit Mitteilung oder QR-IBAN mit QR-Referenz. Rechnungen werden aufbewahrt und nie verändert, lassen sich öffnen, per E-Mail oder WhatsApp senden und speichern.
+- **Zahlungen erfassen:** Die Einnahme wird gebucht, mit der Rechnung als Beleg, und der Auftrag steht auf „bezahlt“. Offene und überfällige Rechnungen erscheinen auf der Startseite, dazu eine Erinnerung am Tag nach der Frist und auf Knopfdruck eine **Zahlungserinnerung** als PDF.
 - **Aufgaben** mit Frist und Farb-Ampel (gelb, orange, rot), auf der Startseite und in der Kundenkarte, dazu **Erinnerungen als Mitteilung** auf Android und Windows.
 - **Mein Geschäft:** Name, Adresse, IBAN (mit Prüfung, erkennt QR-IBAN), Logo, Unterschrift, Kanton. Jede Person richtet ihr eigenes Geschäft ein, nichts davon steht im Programm.
 - **Import** aus der früheren Buchhaltungs-App (Datei `.json`), mit Vorschau. Ein zweiter Import erzeugt nichts doppelt.
@@ -37,7 +39,7 @@ Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständi
 
 - [x] Abgleich über **Dropbox** zwischen Windows und Android
 - [x] **Kunden, Produkte und Aufträge** (Gig, Lektionen-Abo, Grafik-Auftrag …) und **Aufgaben** mit Fristen-Ampel
-- [ ] **Rechnungen** als PDF mit **Schweizer QR-Zahlteil**, Zahlungen verbuchen, Mahnungen
+- [x] **Rechnungen** als PDF mit **Schweizer QR-Zahlteil**, Zahlungen verbuchen, Zahlungserinnerungen
 - [ ] **Jahresabschluss** für die Steuererklärung (für alle Kantone, zuerst Luzern)
 - [ ] **MWST**, falls man pflichtig wird (8,1 %, 2,6 %, 3,8 %, effektiv oder Saldosteuersatz)
 
@@ -57,4 +59,4 @@ Conti hat kein Konto und keinen Server. Alles liegt auf deinen Geräten (unter W
 
 Conti ist freie Software unter der [GNU General Public License v3.0](LICENSE). Du darfst Conti nutzen, verändern und weitergeben. Veränderte Fassungen müssen ebenfalls unter der GPL-3.0 offen bleiben.
 
-Schriften: [Sora](https://fonts.google.com/specimen/Sora) und [IBM Plex Sans](https://fonts.google.com/specimen/IBM+Plex+Sans), beide unter der SIL Open Font License.
+Schriften: [Sora](https://fonts.google.com/specimen/Sora), [IBM Plex Sans](https://fonts.google.com/specimen/IBM+Plex+Sans) und [Arimo](https://fonts.google.com/specimen/Arimo) (SIL Open Font License), [Roboto Slab](https://fonts.google.com/specimen/Roboto+Slab) (Apache License 2.0).

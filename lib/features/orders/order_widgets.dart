@@ -9,6 +9,8 @@ import '../../core/model/synced.dart';
 import '../../core/money.dart';
 import '../../widgets/context_menu.dart';
 import '../../widgets/visuals.dart';
+import '../../app/files.dart';
+import '../invoices/invoice_actions.dart';
 import 'order_editor.dart';
 
 String statusLabel(OrderStatus s) => switch (s) {
@@ -55,6 +57,24 @@ class StatusPill extends StatelessWidget {
           color: colors.last,
         ),
       ),
+    );
+  }
+}
+
+class _OverduePill extends StatelessWidget {
+  const _OverduePill();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.conti.minus;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: c.withValues(alpha: 0.8)),
+        color: c.withValues(alpha: 0.14),
+      ),
+      child: Text(tr('Überfällig', 'Overdue'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c)),
     );
   }
 }
@@ -172,7 +192,7 @@ class OrderTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  StatusPill(o.status),
+                  o.overdue(Day.today()) ? const _OverduePill() : StatusPill(o.status),
                 ],
               ),
             ],
@@ -208,6 +228,12 @@ Future<void> showOrderMenu(BuildContext context, Order o, {Offset? at}) async {
   switch (choice) {
     case 'edit':
       await openOrderEditor(context, order: o);
+    case 'invoice':
+      await issueInvoiceFlow(context, o);
+    case 'open':
+      await openFile(context, s.dataPath(o.invoiceFile));
+    case 'paid':
+      await recordPaymentFlow(context, o);
     case 'copy':
       final c = Order(
         id: newId(),

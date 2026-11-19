@@ -47,6 +47,8 @@ dependencies:
   flutter_local_notifications: 22.3.3
   timezone: ^0.11.2
   flutter_timezone: ^5.1.1
+  pdf: ^3.13.1
+  share_plus: 13.3.1
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +71,10 @@ flutter:
     # Lizenztexte der Schriften (erscheinen unter Einstellungen → Über Conti → Lizenzen)
     - assets/fonts/OFL-Sora.txt
     - assets/fonts/OFL-IBMPlexSans.txt
+    - assets/fonts/OFL-Arimo.txt
+    - assets/fonts/LICENSE-RobotoSlab.txt
+    # Feste Schnitte für die Rechnungs-PDFs (tool/make_pdf_fonts.py)
+    - assets/fonts/pdf/
   # Schriften (SIL Open Font License), feste Schnitte erzeugt mit tool/make_fonts.py
   fonts:
     - family: Sora

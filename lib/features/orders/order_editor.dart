@@ -11,6 +11,7 @@ import '../../core/model/synced.dart';
 import '../../core/money.dart';
 import '../../widgets/visuals.dart';
 import '../clients/client_editor.dart';
+import '../invoices/invoice_actions.dart';
 import '../products/products_screen.dart';
 import 'order_widgets.dart';
 
@@ -59,6 +60,9 @@ class _OrderEditorState extends State<OrderEditor> {
   String? _error;
   bool _saving = false;
 
+  /// Änderungszeit der Fassung, die der Editor zuletzt gesehen hat.
+  DateTime _seenAt = DateTime.utc(2000);
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +80,7 @@ class _OrderEditorState extends State<OrderEditor> {
         lessonsTotal: kind?.subscription == true ? kind!.lessons : null,
       );
     }
+    _seenAt = _o.updatedAt;
     _title.text = _o.title;
     _number.text = _o.number;
     _notes.text = _o.notes;
@@ -136,6 +141,7 @@ class _OrderEditorState extends State<OrderEditor> {
     try {
       await ContiScope.read(context).saveOrder(_o);
       _o = _o.copy();
+      _seenAt = _o.updatedAt;
       return true;
     } catch (e, st) {
       ErrorLog.record(e, st, where: 'Auftrag sichern');
@@ -269,9 +275,29 @@ class _OrderEditorState extends State<OrderEditor> {
     return sum;
   }
 
+  /// Hat sich der Auftrag ausserhalb geändert (Rechnung gestellt, Zahlung
+  /// erfasst, Abgleich), die Angaben dazu übernehmen. Sonst würde „Sichern“
+  /// sie mit der alten Fassung überschreiben.
+  void _absorbExternal(Order? cur) {
+    if (cur == null || !cur.updatedAt.isAfter(_seenAt)) return;
+    _seenAt = cur.updatedAt;
+    _o
+      ..invoiceNumber = cur.invoiceNumber
+      ..invoicedAt = cur.invoicedAt
+      ..dueDate = cur.dueDate
+      ..invoiceFile = cur.invoiceFile
+      ..paidAt = cur.paidAt
+      ..paidEntryId = cur.paidEntryId
+      ..reminders = [...cur.reminders]
+      ..status = cur.status
+      ..followUpId = cur.followUpId
+      ..sessions = [for (final x in cur.sessions) Session.fromJson(x.toJson())];
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = ContiScope.of(context);
+    _absorbExternal(s.order(_o.id));
     final c = context.conti;
     final kinds = s.orderKinds;
     final form = ListView(
@@ -318,6 +344,7 @@ class _OrderEditorState extends State<OrderEditor> {
             const SizedBox(width: 12),
             Expanded(
               child: DropdownButtonFormField<OrderStatus>(
+                key: ValueKey(_o.status),
                 initialValue: _o.status,
                 isExpanded: true,
                 decoration: InputDecoration(labelText: tr('Stand', 'Status')),
@@ -380,6 +407,8 @@ class _OrderEditorState extends State<OrderEditor> {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        InvoiceCard(orderId: _o.id, beforeIssue: _persist),
         const SizedBox(height: 16),
         TextField(controller: _notes, minLines: 2, maxLines: 6, decoration: InputDecoration(labelText: tr('Notiz', 'Note'))),
         if (_error != null)

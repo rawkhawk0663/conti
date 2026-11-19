@@ -74,6 +74,8 @@ void _registerFontLicenses() {
     for (final (name, file) in const [
       ('Sora', 'OFL-Sora.txt'),
       ('IBM Plex Sans', 'OFL-IBMPlexSans.txt'),
+      ('Arimo', 'OFL-Arimo.txt'),
+      ('Roboto Slab', 'LICENSE-RobotoSlab.txt'),
     ]) {
       yield LicenseEntryWithLineBreaks([
         name,

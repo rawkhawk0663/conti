@@ -25,6 +25,8 @@ Conti is a simple cash book for sole traders and freelancers: income, expenses, 
 - **Products** with price and unit (flat, per hour, per lesson, per piece).
 - **Orders** of any kind (gig, lesson pack, design job …) with items and a status from “open” to “paid”. You define the order kinds yourself.
 - **Lesson packs** with any number of lessons: tick off lessons, Conti counts and reminds you when the pack is used up. One button creates the next pack.
+- **Invoices as PDF with the Swiss QR payment part:** from an order with one button. Logo, sender, recipient, items, closing note with signature and payment part with receipt. Regular IBAN with a message or QR-IBAN with a QR reference. Invoices are kept and never changed, and can be opened, sent by email or WhatsApp, and saved.
+- **Record payments:** the income is booked with the invoice as receipt, and the order is set to “paid”. Open and overdue invoices appear on the home page, with a reminder the day after the due date and a **payment reminder** PDF at the push of a button.
 - **Tasks** with a deadline and colours (yellow, orange, red), on the home page and in the client card, plus **reminder notifications** on Android and Windows.
 - **My business:** name, address, IBAN (validated, recognises QR-IBANs), logo, signature, canton. Everyone sets up their own business, none of it is built into the program.
 - **Import** from the previous bookkeeping app (`.json` file), with a preview. Importing twice creates no duplicates.
@@ -37,7 +39,7 @@ Conti is a simple cash book for sole traders and freelancers: income, expenses, 
 
 - [x] **Dropbox** sync between Windows and Android
 - [x] **Clients, products and orders** (gig, lesson pack, design job …) and **tasks** with deadline colours
-- [ ] **Invoices** as PDF with the **Swiss QR payment part**, recording payments, reminders
+- [x] **Invoices** as PDF with the **Swiss QR payment part**, recording payments, reminders
 - [ ] **Year-end report** for the tax return (all cantons, Lucerne first)
 - [ ] **VAT** in case you become liable (8.1 %, 2.6 %, 3.8 %, effective or net tax rate method)
 
@@ -57,4 +59,4 @@ Conti has no account and no server. Everything stays on your devices (on Windows
 
 Conti is free software under the [GNU General Public License v3.0](LICENSE). You may use, change and share Conti. Changed versions must stay open under the GPL-3.0 as well.
 
-Fonts: [Sora](https://fonts.google.com/specimen/Sora) and [IBM Plex Sans](https://fonts.google.com/specimen/IBM+Plex+Sans), both under the SIL Open Font License.
+Fonts: [Sora](https://fonts.google.com/specimen/Sora), [IBM Plex Sans](https://fonts.google.com/specimen/IBM+Plex+Sans) and [Arimo](https://fonts.google.com/specimen/Arimo) (SIL Open Font License), [Roboto Slab](https://fonts.google.com/specimen/Roboto+Slab) (Apache License 2.0).

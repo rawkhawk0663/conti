@@ -53,6 +53,7 @@ class LegacyData {
     required this.business,
     required this.attachments,
     required this.bankName,
+    this.invoicePaths = const {},
     this.logo,
     this.signature,
   });
@@ -67,6 +68,9 @@ class LegacyData {
   final List<Task> tasks;
   final Business business;
   final List<PendingAttachment> attachments;
+
+  /// Pfade der Rechnungs-PDFs der früheren App (Auftrags-ID → Pfad).
+  final Map<String, String> invoicePaths;
   final String bankName;
   final ImportedImage? logo;
   final ImportedImage? signature;
@@ -327,6 +331,10 @@ class LegacyImport {
       tasks: tasks,
       business: business,
       attachments: pending,
+      invoicePaths: {
+        for (final o in j.maps('orders'))
+          if (o.str('invoiceFilePath').isNotEmpty) o.str('id'): o.str('invoiceFilePath'),
+      },
       bankName: business.bankName,
       logo: _dataUrl(company.str('logoDataUrl')) ?? _dataUrl(inv.str('invoiceLogoDataUrl')),
       signature: _dataUrl(inv.str('signatureDataUrl')),
@@ -399,6 +407,27 @@ class LegacyImport {
       tasks: data.tasks,
       business: business,
     );
+    // Rechnungs-PDFs der früheren App übernehmen, wenn sie auf diesem Gerät
+    // liegen (am alten Ort oder im gewählten Ordner). Nur bei Aufträgen, die
+    // in Conti noch keine Rechnungsdatei haben.
+    final index = receiptsFolder == null ? <String, String>{} : await _indexFolder(p.dirname(receiptsFolder));
+    for (final entry in data.invoicePaths.entries) {
+      final o = state.order(entry.key);
+      if (o == null || o.invoiceFile.isNotEmpty || o.invoiceNumber.isEmpty) continue;
+      final name = entry.value.split(RegExp(r'[\\/]')).last;
+      File? src = File(entry.value);
+      if (!await src.exists()) {
+        final hit = index[name.toLowerCase()];
+        src = hit == null ? null : File(hit);
+      }
+      if (src == null) continue;
+      final year = (o.invoicedAt ?? DateTime.now()).year;
+      final rel = 'rechnungen/$year/${o.invoiceNumber.replaceAll(RegExp(r'[\\/:*?"<>|]'), '-')}.pdf';
+      try {
+        await state.store.putFile(rel, await src.readAsBytes());
+        await state.saveOrder(o.copy()..invoiceFile = rel);
+      } catch (_) {}
+    }
     return LegacyImportResult(entries: data.entries.length, attachmentsFound: found, attachmentsMissing: missing);
   }
 

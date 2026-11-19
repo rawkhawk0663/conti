@@ -57,7 +57,7 @@ Geschrieben wird immer über eine Zwischendatei (`JsonFile`).
 - Tests: `test/sync_test.dart` mit zwei Geräten und einer Dropbox im Arbeitsspeicher.
 
 ## Kunden und Aufträge (Paket 3)
-- Navigation (Wunsch des Besitzers): Übersicht, Buchungen, Kunden, Aufträge, **Produkte als eigener Punkt**, Einstellungen. Auf dem Handy zeigt die untere Leiste bei sechs Punkten nur die Beschriftung des gewählten.
+- Navigation (Wunsch des Besitzers): Übersicht, Buchungen, Kunden, Aufträge, **Produkte als eigener Punkt**, Einstellungen. Auf dem Handy zeigt die untere Leiste nur Symbole, ohne Beschriftung (Wunsch des Besitzers, sonst zu eng).
 - **Auftragsarten** (`OrderKind`, `auftragsarten.json`): frei anlegbar unter Einstellungen → Aufträge & Erinnerungen. Vorschläge mit festen IDs (`kind-gig`, `kind-abo`, …), angelegt bei der Einrichtung bzw. beim Laden, falls es noch nie `kind-…` gab (Grabsteine zählen, Gelöschtes kommt nicht zurück). `Order.kind` ist die ID; ältere Daten mit Namen stellt `_migrateOrderKinds` um (ID aus dem Namen `imp-kind-…`).
 - **Abos** (Wunsch des Besitzers): Art mit `subscription`, Grösse frei (`lessons` als Vorschlag, pro Auftrag `Order.lessonsTotal`, 1–200). Lektionen abhaken (`Order.sessions`, mit Datum) speichert sofort. Ist das Abo aufgebraucht: Mitteilung (`Reminders.subscriptionUsedUp`), Hinweis auf der Startseite (`usedUpSubscriptions`) und Knopf „Nächstes Abo anlegen“ (kopiert Kunde, Art, Positionen, Grösse; `followUpId` beendet die Erinnerung).
 - Auftragsnummern `<orderPrefix><Jahr>-<4 Ziffern>` (`nextOrderNumber`), änderbar.

@@ -68,8 +68,9 @@ class _HomeShellState extends State<HomeShell> {
         return Scaffold(
           body: page,
           bottomNavigationBar: NavigationBar(
-            // Sechs Punkte: Beschriftung nur beim gewählten, sonst wird es eng.
-            labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+            // Sechs Punkte: nur Symbole (Wunsch des Besitzers), der Titel oben sagt, wo man ist.
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+            height: 64,
             selectedIndex: _index,
             onDestinationSelected: _go,
             destinations: [

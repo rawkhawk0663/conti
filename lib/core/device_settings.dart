@@ -89,4 +89,16 @@ class DeviceSettings {
     _data['lastSync'] = iso;
     return _save();
   }
+
+  /// Mitteilungen für Aufgaben und Abos (Standard an).
+  bool get remindersOn => _data['remindersOn'] != false;
+
+  /// Uhrzeit der Erinnerungen (Stunde, Standard 8 Uhr).
+  int get reminderHour => (_data['reminderHour'] as num?)?.toInt() ?? 8;
+
+  Future<void> setReminders({bool? on, int? hour}) {
+    if (on != null) _data['remindersOn'] = on;
+    if (hour != null) _data['reminderHour'] = hour;
+    return _save();
+  }
 }

@@ -22,6 +22,7 @@ class DataSnapshot {
     required this.products,
     required this.orders,
     required this.tasks,
+    required this.orderKinds,
     required this.initialized,
   });
 
@@ -33,6 +34,7 @@ class DataSnapshot {
   List<Product> products;
   List<Order> orders;
   List<Task> tasks;
+  List<OrderKind> orderKinds;
 
   /// Gibt es die Markierungsdatei (der Ordner wurde schon einmal eingerichtet)?
   bool initialized;
@@ -51,7 +53,7 @@ class DataSnapshot {
 /// conti.json              Markierung (Format, Version)
 /// geschaeft.json          Mein Geschäft
 /// konten.json, kategorien.json, kunden.json, produkte.json,
-/// auftraege.json, aufgaben.json
+/// auftraege.json, aufgaben.json, auftragsarten.json
 /// buchungen/<jahr>.json   Buchungen eines Jahres
 /// belege/<jahr>/<id>.<endung>   Belege (werden nie verändert)
 /// bilder/                 Logo, Unterschrift
@@ -95,6 +97,7 @@ class DataStore {
       products: await _loadList('produkte.json', Product.fromJson),
       orders: await _loadList('auftraege.json', Order.fromJson),
       tasks: await _loadList('aufgaben.json', Task.fromJson),
+      orderKinds: await _loadList('auftragsarten.json', OrderKind.fromJson),
       initialized: initialized,
     );
   }
@@ -151,6 +154,8 @@ class DataStore {
       saveList('produkte.json', 'conti-produkte', x, Product.fromJson);
   Future<List<Order>> saveOrders(List<Order> x) => saveList('auftraege.json', 'conti-auftraege', x, Order.fromJson);
   Future<List<Task>> saveTasks(List<Task> x) => saveList('aufgaben.json', 'conti-aufgaben', x, Task.fromJson);
+  Future<List<OrderKind>> saveOrderKinds(List<OrderKind> x) =>
+      saveList('auftragsarten.json', 'conti-auftragsarten', x, OrderKind.fromJson);
 
   /// Buchungen der Jahre [years] speichern (jedes Jahr eine Datei).
   /// Verschiebt man eine Buchung in ein anderes Jahr, müssen beide Jahre

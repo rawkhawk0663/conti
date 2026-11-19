@@ -44,6 +44,14 @@ class Client implements Synced {
 
   String get personName => [firstName, lastName].where((s) => s.isNotEmpty).join(' ');
 
+  Client copy() => Client.fromJson(toJson());
+
+  /// „Musterweg 3, 6000 Luzern“
+  String get addressLine => [
+    [street, houseNumber].where((s) => s.isNotEmpty).join(' '),
+    [zip, city].where((s) => s.isNotEmpty).join(' '),
+  ].where((s) => s.isNotEmpty).join(', ');
+
   String get displayName {
     if (company.isNotEmpty) return company;
     final n = personName;
@@ -136,6 +144,8 @@ class Product implements Synced {
 
   void touch() => updatedAt = DateTime.now().toUtc();
 
+  Product copy() => Product.fromJson(toJson());
+
   @override
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -225,13 +235,94 @@ class OrderItem {
   );
 }
 
-/// Ein Auftrag: Gig, Lektionen-Abo, Grafik-Auftrag … ([kind] ist frei).
+/// Eine bezogene Lektion in einem Abo.
+class Session {
+  Session({required this.id, required this.date, this.note = ''});
+  final String id;
+  DateTime date;
+  String note;
+
+  Map<String, dynamic> toJson() => {'id': id, 'date': Day.toKey(date), if (note.isNotEmpty) 'note': note};
+
+  factory Session.fromJson(Map<String, dynamic> j) =>
+      Session(id: j.str('id', newId()), date: Day.parse(j.strOrNull('date')) ?? Day.today(), note: j.str('note'));
+}
+
+/// Eine Auftragsart (Gig, Lektionen-Abo, Grafik …). Legt man selbst an.
+/// Bei einem Abo ([subscription]) zählt Conti die bezogenen Lektionen,
+/// [lessons] ist die vorgeschlagene Grösse eines neuen Abos.
+class OrderKind implements Synced {
+  OrderKind({
+    required this.id,
+    required this.name,
+    this.subscription = false,
+    this.lessons = 5,
+    this.order = 0,
+    DateTime? updatedAt,
+    this.deleted = false,
+  }) : updatedAt = updatedAt ?? DateTime.now().toUtc();
+
+  @override
+  final String id;
+  String name;
+  bool subscription;
+  int lessons;
+  int order;
+  @override
+  DateTime updatedAt;
+  @override
+  bool deleted;
+
+  void touch() => updatedAt = DateTime.now().toUtc();
+
+  OrderKind copy() => OrderKind.fromJson(toJson());
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    if (subscription) 'subscription': true,
+    'lessons': lessons,
+    'order': order,
+    'updatedAt': Day.stamp(updatedAt),
+    if (deleted) 'deleted': true,
+  };
+
+  factory OrderKind.fromJson(Map<String, dynamic> j) => OrderKind(
+    id: j.str('id', newId()),
+    name: j.str('name'),
+    subscription: j.flag('subscription'),
+    lessons: j.integer('lessons', 5),
+    order: j.integer('order'),
+    updatedAt: j.stamp('updatedAt'),
+    deleted: j.flag('deleted'),
+  );
+
+  /// Vorschläge mit festen IDs (zwei neu eingerichtete Geräte haben dieselben).
+  static List<OrderKind> defaults({required bool english}) {
+    final t = DateTime.utc(2026, 1, 1);
+    return [
+      OrderKind(id: 'kind-gig', name: 'Gig', order: 0, updatedAt: t),
+      OrderKind(id: 'kind-abo', name: english ? 'Lesson pack' : 'Lektionen-Abo', subscription: true, lessons: 5, order: 1, updatedAt: t),
+      OrderKind(id: 'kind-lessons', name: english ? 'Single lessons' : 'Einzellektionen', order: 2, updatedAt: t),
+      OrderKind(id: 'kind-design', name: english ? 'Design' : 'Grafik', order: 3, updatedAt: t),
+      OrderKind(id: 'kind-other', name: english ? 'Other' : 'Sonstiges', order: 4, updatedAt: t),
+    ];
+  }
+}
+
+/// Ein Auftrag: Gig, Lektionen-Abo, Grafik-Auftrag … ([kind] ist die ID
+/// einer [OrderKind]; ältere Daten können dort noch einen Namen haben).
 class Order implements Synced {
   Order({
     required this.id,
     required this.number,
     required this.title,
     this.kind = '',
+    this.date,
+    this.lessonsTotal,
+    List<Session>? sessions,
+    this.followUpId,
     this.clientId,
     this.status = OrderStatus.open,
     List<OrderItem>? items,
@@ -246,6 +337,7 @@ class Order implements Synced {
     DateTime? updatedAt,
     this.deleted = false,
   }) : items = items ?? [],
+       sessions = sessions ?? [],
        createdAt = createdAt ?? DateTime.now().toUtc(),
        updatedAt = updatedAt ?? DateTime.now().toUtc();
 
@@ -254,8 +346,26 @@ class Order implements Synced {
   String number;
   String title;
 
-  /// Auftragsart (frei, z. B. „Gig“, „Abo“, „Grafik“).
+  /// Auftragsart (ID einer [OrderKind]).
   String kind;
+
+  /// Datum des Auftrags (z. B. des Gigs). Null = ohne Datum.
+  DateTime? date;
+
+  /// Nur bei Abos: wie viele Lektionen das Abo hat.
+  int? lessonsTotal;
+
+  /// Nur bei Abos: bezogene Lektionen.
+  List<Session> sessions;
+
+  /// Nur bei Abos: das danach angelegte nächste Abo (dann keine Erinnerung mehr).
+  String? followUpId;
+
+  bool get followedUp => followUpId != null;
+  bool get isSubscription => lessonsTotal != null;
+  int get lessonsUsed => sessions.length;
+  int get lessonsLeft => (lessonsTotal ?? 0) - sessions.length;
+  bool get subscriptionUsedUp => isSubscription && lessonsLeft <= 0;
   String? clientId;
   OrderStatus status;
   List<OrderItem> items;
@@ -278,12 +388,18 @@ class Order implements Synced {
 
   void touch() => updatedAt = DateTime.now().toUtc();
 
+  Order copy() => Order.fromJson(toJson());
+
   @override
   Map<String, dynamic> toJson() => {
     'id': id,
     'number': number,
     'title': title,
     'kind': kind,
+    if (date != null) 'date': Day.toKey(date!),
+    if (lessonsTotal != null) 'lessonsTotal': lessonsTotal,
+    if (sessions.isNotEmpty) 'sessions': [for (final x in sessions) x.toJson()],
+    if (followUpId != null) 'followUpId': followUpId,
     if (clientId != null) 'clientId': clientId,
     'status': status.name,
     'items': [for (final i in items) i.toJson()],
@@ -304,6 +420,10 @@ class Order implements Synced {
     number: j.str('number'),
     title: j.str('title'),
     kind: j.str('kind'),
+    date: Day.parse(j.strOrNull('date')),
+    lessonsTotal: j['lessonsTotal'] is num ? j.integer('lessonsTotal') : null,
+    sessions: [for (final x in j.maps('sessions')) Session.fromJson(x)],
+    followUpId: j.strOrNull('followUpId'),
     clientId: j.strOrNull('clientId'),
     status: OrderStatus.parse(j.strOrNull('status')),
     items: [for (final i in j.maps('items')) OrderItem.fromJson(i)],
@@ -351,6 +471,8 @@ class Task implements Synced {
   bool deleted;
 
   void touch() => updatedAt = DateTime.now().toUtc();
+
+  Task copy() => Task.fromJson(toJson());
 
   @override
   Map<String, dynamic> toJson() => {

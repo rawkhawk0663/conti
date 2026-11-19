@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -9,6 +10,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'app/error_log.dart';
 import 'app/l10n.dart';
+import 'app/reminders.dart';
 import 'app/theme.dart';
 import 'app/updater.dart';
 import 'core/backup.dart';
@@ -26,6 +28,17 @@ Future<void> main() async {
   final state = ContiState(support);
   await state.load();
   final sync = SyncController(state)..start();
+  // Erinnerungen: einrichten, einmal um Erlaubnis fragen, bei jeder Änderung neu planen.
+  await Reminders.init();
+  if (state.device.remindersOn && !state.needsSetup) unawaited(Reminders.askPermission());
+  Timer? plan;
+  void replan() {
+    plan?.cancel();
+    plan = Timer(const Duration(seconds: 2), () => Reminders.reschedule(state));
+  }
+
+  state.addListener(replan);
+  replan();
   // Einmal pro Tag eine Sicherung, nach einem Update alte Programmdateien wegräumen.
   Future<void>.delayed(const Duration(seconds: 8), () async {
     try {

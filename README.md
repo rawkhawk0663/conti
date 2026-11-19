@@ -21,6 +21,11 @@ Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständi
 - **Belege** an jede Buchung hängen: auf dem Handy direkt fotografieren, am Computer PDF oder Bild wählen.
 - **Übersicht:** Gewinn des Jahres, Einnahmen und Ausgaben, Monatsbalken, Summen pro Kategorie, Kontostände.
 - **Suchen und filtern** nach Jahr, Art, Konto, Kategorie und Text.
+- **Kunden** mit Adresse, Kontakt und Notizen. Die Kundenkarte zeigt Aufträge, Aufgaben, Buchungen und den offenen Betrag.
+- **Produkte** mit Preis und Einheit (pauschal, pro Stunde, pro Lektion, pro Stück).
+- **Aufträge** jeder Art (Gig, Lektionen-Abo, Grafik …) mit Positionen und Stand von „offen“ bis „bezahlt“. Auftragsarten legst du selbst an.
+- **Abos** mit frei wählbarer Anzahl Lektionen: Lektionen abhaken, Conti zählt mit und erinnert, wenn das Abo aufgebraucht ist. Mit einem Knopf entsteht das nächste Abo.
+- **Aufgaben** mit Frist und Farb-Ampel (gelb, orange, rot), auf der Startseite und in der Kundenkarte, dazu **Erinnerungen als Mitteilung** auf Android und Windows.
 - **Mein Geschäft:** Name, Adresse, IBAN (mit Prüfung, erkennt QR-IBAN), Logo, Unterschrift, Kanton. Jede Person richtet ihr eigenes Geschäft ein, nichts davon steht im Programm.
 - **Import** aus der früheren Buchhaltungs-App (Datei `.json`), mit Vorschau. Ein zweiter Import erzeugt nichts doppelt.
 - **Abgleich über Dropbox** zwischen Windows und Android: beim Start, alle zwei Minuten und kurz nach jeder Änderung. Was zwei Geräte ohne Netz erfassen, wird zusammengeführt. Die Daten liegen in deiner Dropbox im Ordner „Apps“.
@@ -31,7 +36,7 @@ Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständi
 ## Kommt bald
 
 - [x] Abgleich über **Dropbox** zwischen Windows und Android
-- [ ] **Kunden, Produkte und Aufträge** (Gig, Lektionen-Abo, Grafik-Auftrag …) und **Aufgaben** mit Fristen-Ampel
+- [x] **Kunden, Produkte und Aufträge** (Gig, Lektionen-Abo, Grafik-Auftrag …) und **Aufgaben** mit Fristen-Ampel
 - [ ] **Rechnungen** als PDF mit **Schweizer QR-Zahlteil**, Zahlungen verbuchen, Mahnungen
 - [ ] **Jahresabschluss** für die Steuererklärung (für alle Kantone, zuerst Luzern)
 - [ ] **MWST**, falls man pflichtig wird (8,1 %, 2,6 %, 3,8 %, effektiv oder Saldosteuersatz)

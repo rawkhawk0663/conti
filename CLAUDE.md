@@ -5,7 +5,7 @@ Conti ist eine Buchhaltungs-App für Selbständige in der Schweiz („Milchbüec
 Der Bauplan liegt als Artifact „Conti Bauplan“ beim Besitzer. Pakete:
 1. **Kassenbuch** (fertig): Buchungen, Konten, Kategorien mit Unterkategorien, Aufteilen, Belege, Übersicht, Ersteinrichtung, Import aus der früheren App, Sicherungen.
 2. **Dropbox-Sync** (fertig) auf Windows und Android, siehe „Abgleich“.
-3. **Kunden, Produkte, Aufträge** (Auftragsarten frei: Gig, Abo, Grafik …), Abos mit Zähler, **Aufgaben** mit Fristen-Ampel (`Business.deadlineRules`). Die Daten kommen schon jetzt mit dem Import.
+3. **Kunden, Produkte, Aufträge, Aufgaben** (fertig), siehe „Kunden und Aufträge“.
 4. **Rechnungen** als PDF mit Schweizer QR-Zahlteil, Aufbau wie die bisherige Rechnung des Besitzers (Logo oben links, Absender rechts, grosser Titel, Tabelle Beschreibung/Tarif/Anzahl/Preis, Dankeszeile, Unterschrift, Zahlteil). Alles einstellbar (`InvoiceSettings`, Platzhalter `{rechnungsnummer}`, `{name}`, `{firma}`, `{datum}`). Normale IBAN → Mitteilung, QR-IBAN → QR-Referenz (`Iban.isQrIban`). Seit November 2025 nur strukturierte Adressen.
 5. **Jahresabschluss** für alle Kantone (Aufstellung Einnahmen, Ausgaben, Vermögen, Privatbezüge/-einlagen), zuerst Feld-Zuordnung für Luzern.
 6. **MWST** (optional, ausgeschaltet): Feld `vat` an Buchungen, Produkten und Positionen ist schon da (Standard „none“).
@@ -37,12 +37,12 @@ Datenordner `<ApplicationSupport>/Daten` (Windows `%APPDATA%\Conti\Conti\Daten`)
 ```
 conti.json                Markierung (Format conti-daten v1)
 geschaeft.json            Mein Geschäft (Format conti-geschaeft v1, jüngste Fassung gewinnt als Ganzes)
-konten.json, kategorien.json, kunden.json, produkte.json, auftraege.json, aufgaben.json   ({format, version, items})
+konten.json, kategorien.json, kunden.json, produkte.json, auftraege.json, aufgaben.json, auftragsarten.json   ({format, version, items})
 buchungen/<jahr>.json     Buchungen eines Jahres (conti-buchungen v1). Beim Verschieben in ein anderes Jahr beide Jahre speichern (`saveEntry(previousYear:)`), beim Laden gewinnt die jüngere Fassung.
 belege/<jahr>/<id>.<endung>   Belege
 bilder/                   Logo, Unterschrift
 ```
-Gerätespezifisch (nicht abgeglichen): `<ApplicationSupport>/einstellungen.json` (Darstellung, Sprache, `setupDone`, letzte Sicherung, zuletzt gewähltes Konto), `Sicherungen/` (automatisch, 14 Stück), `fehler.log`, `update.log`.
+Gerätespezifisch (nicht abgeglichen): `<ApplicationSupport>/einstellungen.json` (Darstellung, Sprache, `setupDone`, letzte Sicherung, zuletzt gewähltes Konto, Dropbox, Erinnerungen an/aus und Uhrzeit), `Sicherungen/` (automatisch, 14 Stück), `fehler.log`, `update.log`.
 Geschrieben wird immer über eine Zwischendatei (`JsonFile`).
 
 ## Abgleich (Paket 2)
@@ -54,6 +54,15 @@ Geschrieben wird immer über eine Zwischendatei (`JsonFile`).
 - **Wann:** beim Start, alle 2 Minuten, 4 Sekunden nach jeder eigenen Änderung (`ContiState.onLocalChange`), wenn die App wieder in den Vordergrund kommt, auf Knopfdruck.
 - **Zweites Gerät:** In der Einrichtung „Schon auf einem anderen Gerät eingerichtet“ → Dropbox verbinden → Abgleich → fertig (keine Standard-Konten, sonst gäbe es sie doppelt).
 - Tests: `test/sync_test.dart` mit zwei Geräten und einer Dropbox im Arbeitsspeicher.
+
+## Kunden und Aufträge (Paket 3)
+- Navigation (Wunsch des Besitzers): Übersicht, Buchungen, Kunden, Aufträge, **Produkte als eigener Punkt**, Einstellungen. Auf dem Handy zeigt die untere Leiste bei sechs Punkten nur die Beschriftung des gewählten.
+- **Auftragsarten** (`OrderKind`, `auftragsarten.json`): frei anlegbar unter Einstellungen → Aufträge & Erinnerungen. Vorschläge mit festen IDs (`kind-gig`, `kind-abo`, …), angelegt bei der Einrichtung bzw. beim Laden, falls es noch nie `kind-…` gab (Grabsteine zählen, Gelöschtes kommt nicht zurück). `Order.kind` ist die ID; ältere Daten mit Namen stellt `_migrateOrderKinds` um (ID aus dem Namen `imp-kind-…`).
+- **Abos** (Wunsch des Besitzers): Art mit `subscription`, Grösse frei (`lessons` als Vorschlag, pro Auftrag `Order.lessonsTotal`, 1–200). Lektionen abhaken (`Order.sessions`, mit Datum) speichert sofort. Ist das Abo aufgebraucht: Mitteilung (`Reminders.subscriptionUsedUp`), Hinweis auf der Startseite (`usedUpSubscriptions`) und Knopf „Nächstes Abo anlegen“ (kopiert Kunde, Art, Positionen, Grösse; `followUpId` beendet die Erinnerung).
+- Auftragsnummern `<orderPrefix><Jahr>-<4 Ziffern>` (`nextOrderNumber`), änderbar.
+- **Aufgaben** mit Fristen-Ampel (`Urgency.of` in `core/deadlines.dart`, Regeln `Business.deadlineRules`, Tage einstellbar). Auf der Startseite (`_TasksCard`), in der Kundenkarte und unter „Alle“ (`TasksScreen`).
+- **Mitteilungen** (Wunsch des Besitzers: in der App *und* als Mitteilung): `lib/app/reminders.dart`, `flutter_local_notifications` **22.3.3** (23 verlangt AGP 9.1.1 und compileSdk 37, das passt nicht zu Flutter 3.47), `timezone`, `flutter_timezone`. Android und Windows. Geplant wird bei jeder Änderung alles neu (`Reminders.plan`, höchstens 60 in 90 Tagen): an jedem Ampel-Tag und am Fälligkeitstag zur gewählten Stunde (`reminderHour`, Standard 8). Android: Desugaring in `build.gradle.kts`, Empfänger im Manifest, Erlaubnis wird beim Start gefragt, ungenaue Planung (`inexactAllowWhileIdle`, keine Sonder-Erlaubnis). Windows: `WindowsInitializationSettings` mit fester GUID.
+- Seiten: `features/clients/` (Liste, Karte, Formular), `features/orders/` (Liste, Editor, Zeile, Stand-Farben), `features/products/`, `features/tasks/`, `features/settings/work_settings_page.dart`.
 
 ## Import aus der früheren App
 `lib/core/import/legacy_import.dart`. Die Datei hat `entries`, `clients`, `products`, `orders`, `tasks`, `company`, `invoiceSettings`, `taskSettings`. Beträge dort in Franken (`double`), `expenseItems` mit einem Eintrag = Unterkategorie, mit mehreren = Aufteilung. Die alte App kennt keine Konten: Beim Import wählt man eines. Belege stehen nur als `storedFileName` (z. B. `2026/…pdf`) drin, die Dateien sucht der Import im gewählten Ordner (direkt oder nach Dateiname). Logo und Unterschrift sind Daten-URLs (SVG). Platzhalter `{deinName}` → `{name}`, `{invoiceNumber}` → `{rechnungsnummer}`. Strasse und Hausnummer werden getrennt (`splitStreet`).
@@ -67,7 +76,7 @@ lib/
     store/    json_file, data_store
     import/   legacy_import
     sync/     cloud_auth, dropbox_api, sync_engine, sync_controller
-  features/   shell, overview, entries (Liste, Zeile, Editor), settings (Geschäft, Konten, Kategorien, Daten, Über), import, setup, sync
+  features/   shell, overview, entries, clients, orders, products, tasks, settings, import, setup, sync
   widgets/    visuals
 ```
 

@@ -36,10 +36,14 @@ class ContiState extends ChangeNotifier {
   List<Product> _products = [];
   List<Order> _orders = [];
   List<Task> _tasks = [];
+  List<OrderKind> _orderKinds = [];
   bool dataInitialized = false;
 
   /// Wird nach jeder eigenen Änderung aufgerufen (der Abgleich startet dann bald).
   VoidCallback? onLocalChange;
+
+  /// Anzeige neu aufbauen (z. B. nach geänderten Geräteeinstellungen).
+  void refresh() => notifyListeners();
 
   void _changed() {
     notifyListeners();
@@ -63,7 +67,10 @@ class ContiState extends ChangeNotifier {
     _products = s.products;
     _orders = s.orders;
     _tasks = s.tasks;
+    _orderKinds = s.orderKinds;
     dataInitialized = s.initialized;
+    if (dataInitialized) await ensureOrderKinds(notify: false);
+    await _migrateOrderKinds();
     notifyListeners();
   }
 
@@ -81,6 +88,81 @@ class ContiState extends ChangeNotifier {
   List<Product> get products => _products.where((x) => !x.deleted).toList();
   List<Order> get orders => _orders.where((x) => !x.deleted).toList();
   List<Task> get tasks => _tasks.where((x) => !x.deleted).toList();
+  List<OrderKind> get orderKinds =>
+      (_orderKinds.where((k) => !k.deleted).toList()..sort((a, b) => a.order.compareTo(b.order)));
+
+  Product? product(String? id) => _products.where((x) => x.id == id).firstOrNull;
+  Order? order(String? id) => _orders.where((x) => x.id == id).firstOrNull;
+  Task? task(String? id) => _tasks.where((x) => x.id == id).firstOrNull;
+  OrderKind? orderKind(String? id) => _orderKinds.where((x) => x.id == id).firstOrNull;
+
+  /// Name der Auftragsart (ältere Daten tragen noch den Namen selbst).
+  String kindLabel(Order o) => orderKind(o.kind)?.name ?? o.kind;
+
+  List<Order> ordersOf(String clientId) => orders.where((o) => o.clientId == clientId).toList()
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  List<Entry> entriesOf(String clientId) => entries.where((e) => e.clientId == clientId).toList()
+    ..sort((a, b) => b.date.compareTo(a.date));
+  List<Task> tasksOf(String clientId) => tasks.where((t) => t.clientId == clientId).toList();
+
+  /// Verrechnet, aber noch nicht bezahlt (in Rappen).
+  int openAmountOf(String clientId) =>
+      ordersOf(clientId).where((o) => o.status == OrderStatus.invoiced).fold(0, (a, o) => a + o.total);
+
+  /// Offene Aufgaben, nach Frist (ohne Frist zuletzt).
+  List<Task> get openTasks => tasks.where((t) => !t.done).toList()
+    ..sort((a, b) {
+      if (a.due == null && b.due == null) return a.createdAt.compareTo(b.createdAt);
+      if (a.due == null) return 1;
+      if (b.due == null) return -1;
+      return a.due!.compareTo(b.due!);
+    });
+
+  /// Aufgebrauchte Abos, die noch nicht erledigt oder verrechnet sind.
+  List<Order> get usedUpSubscriptions =>
+      orders.where((o) => o.subscriptionUsedUp && o.status != OrderStatus.cancelled && !o.followedUp).toList();
+
+  /// Nächste freie Auftragsnummer, z. B. „A-2026-0009“.
+  String nextOrderNumber([DateTime? at]) {
+    final year = (at ?? Day.today()).year;
+    final prefix = '${business.invoice.orderPrefix}$year-';
+    var max = 0;
+    for (final o in _orders) {
+      if (!o.number.startsWith(prefix)) continue;
+      final n = int.tryParse(o.number.substring(prefix.length));
+      if (n != null && n > max) max = n;
+    }
+    return '$prefix${(max + 1).toString().padLeft(4, '0')}';
+  }
+
+  /// Ältere Aufträge tragen den Namen der Art statt der ID: einmal umstellen.
+  /// Die neue Art bekommt eine ID aus dem Namen, damit zwei Geräte dieselbe anlegen.
+  Future<void> _migrateOrderKinds() async {
+    final ids = {for (final k in _orderKinds) k.id};
+    final todo = _orders.where((o) => !o.deleted && o.kind.isNotEmpty && !ids.contains(o.kind)).toList();
+    if (todo.isEmpty) return;
+    final newKinds = <OrderKind>[];
+    for (final o in todo) {
+      final name = o.kind.trim();
+      var k = [..._orderKinds, ...newKinds].where((x) => !x.deleted && x.name.toLowerCase() == name.toLowerCase()).firstOrNull;
+      if (k == null) {
+        k = OrderKind(
+          id: 'imp-kind-${name.toLowerCase().codeUnits.fold<int>(7, (h, c) => (h * 31 + c) & 0x7fffffff)}',
+          name: name,
+          order: 100 + newKinds.length,
+          updatedAt: DateTime.utc(2026, 1, 1),
+        );
+        newKinds.add(k);
+      }
+      o.kind = k.id;
+    }
+    try {
+      if (newKinds.isNotEmpty) _orderKinds = await store.saveOrderKinds(mergeById(_orderKinds, newKinds));
+      _orders = await store.saveOrders(_orders);
+    } catch (e, st) {
+      ErrorLog.record(e, st, where: 'Auftragsarten umstellen');
+    }
+  }
 
   Account? account(String? id) => _accounts.where((a) => a.id == id).firstOrNull;
   Category? category(String? id) => _categories.where((c) => c.id == id).firstOrNull;
@@ -234,6 +316,71 @@ class ContiState extends ChangeNotifier {
     await saveCategory(c);
   }
 
+  Future<void> saveClient(Client c) async {
+    c.touch();
+    _clients.removeWhere((x) => x.id == c.id);
+    _clients.add(c);
+    _clients = await store.saveClients(_clients);
+    _changed();
+  }
+
+  Future<void> deleteClient(Client c) async {
+    final x = c.copy()..deleted = true;
+    await saveClient(x);
+  }
+
+  Future<void> saveProduct(Product x) async {
+    x.touch();
+    _products.removeWhere((y) => y.id == x.id);
+    _products.add(x);
+    _products = await store.saveProducts(_products);
+    _changed();
+  }
+
+  Future<void> deleteProduct(Product x) => saveProduct(x.copy()..deleted = true);
+
+  Future<void> saveOrder(Order x) async {
+    x.touch();
+    _orders.removeWhere((y) => y.id == x.id);
+    _orders.add(x);
+    _orders = await store.saveOrders(_orders);
+    _changed();
+  }
+
+  Future<void> deleteOrder(Order x) => saveOrder(x.copy()..deleted = true);
+
+  Future<void> saveTask(Task x) async {
+    x.touch();
+    _tasks.removeWhere((y) => y.id == x.id);
+    _tasks.add(x);
+    _tasks = await store.saveTasks(_tasks);
+    _changed();
+  }
+
+  Future<void> deleteTask(Task x) => saveTask(x.copy()..deleted = true);
+
+  Future<void> saveOrderKind(OrderKind k) async {
+    k.touch();
+    _orderKinds.removeWhere((y) => y.id == k.id);
+    _orderKinds.add(k);
+    _orderKinds = await store.saveOrderKinds(_orderKinds);
+    _changed();
+  }
+
+  bool orderKindInUse(String id) => orders.any((o) => o.kind == id);
+
+  /// Vorgeschlagene Auftragsarten anlegen, falls es sie noch nie gab
+  /// (gelöschte bleiben als Grabstein und kommen nicht zurück).
+  Future<void> ensureOrderKinds({bool notify = true}) async {
+    if (_orderKinds.any((k) => k.id.startsWith('kind-'))) return;
+    try {
+      _orderKinds = await store.saveOrderKinds(mergeById(_orderKinds, OrderKind.defaults(english: L10n.isEnglish)));
+    } catch (e, st) {
+      ErrorLog.record(e, st, where: 'Auftragsarten anlegen');
+    }
+    if (notify) _changed();
+  }
+
   Future<void> saveBusiness(Business b) async {
     b.touch();
     business = await store.saveBusiness(b);
@@ -250,6 +397,7 @@ class ContiState extends ChangeNotifier {
     List<Product> products = const [],
     List<Order> orders = const [],
     List<Task> tasks = const [],
+    List<OrderKind> orderKinds = const [],
     Business? business,
   }) async {
     if (entries.isNotEmpty) {
@@ -262,6 +410,11 @@ class ContiState extends ChangeNotifier {
     if (products.isNotEmpty) _products = await store.saveProducts(mergeById(_products, products));
     if (orders.isNotEmpty) _orders = await store.saveOrders(mergeById(_orders, orders));
     if (tasks.isNotEmpty) _tasks = await store.saveTasks(mergeById(_tasks, tasks));
+    if (orderKinds.isNotEmpty) _orderKinds = await store.saveOrderKinds(mergeById(_orderKinds, orderKinds));
+    if (orders.isNotEmpty) {
+      await ensureOrderKinds(notify: false);
+      await _migrateOrderKinds();
+    }
     if (business != null) {
       if (business.updatedAt.isAfter(this.business.updatedAt)) this.business = await store.saveBusiness(business);
     }
@@ -271,6 +424,7 @@ class ContiState extends ChangeNotifier {
   /// Einrichtung abschliessen.
   Future<void> finishSetup() async {
     await store.markInitialized();
+    await ensureOrderKinds(notify: false);
     await device.setSetupDone();
     dataInitialized = true;
     _changed();

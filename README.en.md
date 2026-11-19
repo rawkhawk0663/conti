@@ -21,6 +21,11 @@ Conti is a simple cash book for sole traders and freelancers: income, expenses, 
 - **Receipts** attached to any entry: take a photo on your phone, or choose a PDF or image on the computer.
 - **Overview:** profit of the year, income and expenses, monthly bars, totals per category, account balances.
 - **Search and filter** by year, type, account, category and text.
+- **Clients** with address, contact and notes. The client card shows orders, tasks, entries and the amount due.
+- **Products** with price and unit (flat, per hour, per lesson, per piece).
+- **Orders** of any kind (gig, lesson pack, design job …) with items and a status from “open” to “paid”. You define the order kinds yourself.
+- **Lesson packs** with any number of lessons: tick off lessons, Conti counts and reminds you when the pack is used up. One button creates the next pack.
+- **Tasks** with a deadline and colours (yellow, orange, red), on the home page and in the client card, plus **reminder notifications** on Android and Windows.
 - **My business:** name, address, IBAN (validated, recognises QR-IBANs), logo, signature, canton. Everyone sets up their own business, none of it is built into the program.
 - **Import** from the previous bookkeeping app (`.json` file), with a preview. Importing twice creates no duplicates.
 - **Sync via Dropbox** between Windows and Android: at start-up, every two minutes and shortly after every change. What two devices record offline is merged. The data lives in your Dropbox in the “Apps” folder.
@@ -31,7 +36,7 @@ Conti is a simple cash book for sole traders and freelancers: income, expenses, 
 ## Coming soon
 
 - [x] **Dropbox** sync between Windows and Android
-- [ ] **Clients, products and orders** (gig, lesson pack, design job …) and **tasks** with deadline colours
+- [x] **Clients, products and orders** (gig, lesson pack, design job …) and **tasks** with deadline colours
 - [ ] **Invoices** as PDF with the **Swiss QR payment part**, recording payments, reminders
 - [ ] **Year-end report** for the tax return (all cantons, Lucerne first)
 - [ ] **VAT** in case you become liable (8.1 %, 2.6 %, 3.8 %, effective or net tax rate method)

@@ -103,6 +103,7 @@ class Backup {
         products: snap.products,
         orders: snap.orders,
         tasks: snap.tasks,
+        orderKinds: snap.orderKinds,
         business: snap.business.isEmpty ? null : snap.business,
       );
       return snap.entries.where((e) => !e.deleted).length;

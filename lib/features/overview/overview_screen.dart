@@ -10,6 +10,9 @@ import '../../widgets/visuals.dart';
 import '../entries/entry_editor.dart';
 import '../sync/sync_page.dart';
 import '../entries/entry_tile.dart';
+import '../orders/order_editor.dart';
+import '../orders/order_widgets.dart';
+import '../tasks/tasks.dart';
 
 /// Startseite: Gewinn des Jahres, Konten, Monate, letzte Buchungen.
 class OverviewScreen extends StatefulWidget {
@@ -39,6 +42,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
       _MonthsCard(year: year),
       _CategoriesCard(year: year),
       _RecentCard(onShowAll: widget.onShowEntries),
+      const _TasksCard(),
     ];
 
     return Scaffold(
@@ -74,7 +78,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
               padding: pad,
               itemCount: cards.length,
               separatorBuilder: (_, _) => const SizedBox(height: 14),
-              itemBuilder: (_, i) => cards[i],
+              // Handy: Aufgaben gleich nach dem Gewinn.
+              itemBuilder: (_, i) => cards[const [0, 5, 1, 2, 3, 4][i]],
             );
           }
           // Zwei Spalten: links die Zahlen, rechts Konten und Letzte Buchungen.
@@ -88,7 +93,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   child: Column(children: [cards[0], const SizedBox(height: 14), cards[2], const SizedBox(height: 14), cards[3]]),
                 ),
                 const SizedBox(width: 14),
-                Expanded(flex: 2, child: Column(children: [cards[1], const SizedBox(height: 14), cards[4]])),
+                Expanded(
+                  flex: 2,
+                  child: Column(children: [cards[5], const SizedBox(height: 14), cards[1], const SizedBox(height: 14), cards[4]]),
+                ),
               ],
             ),
           );
@@ -316,6 +324,77 @@ class _RecentCard extends StatelessWidget {
                   EntryTile(entry: e, onTap: () => openEntryEditor(context, entry: e)),
               ],
             ),
+    );
+  }
+}
+
+/// Offene Aufgaben mit Ampel und aufgebrauchte Abos.
+class _TasksCard extends StatelessWidget {
+  const _TasksCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = ContiScope.of(context);
+    final c = context.conti;
+    final open = s.openTasks;
+    final abos = s.usedUpSubscriptions;
+    return SectionCard(
+      title: tr('Aufgaben', 'Tasks'),
+      trailing: TextButton(
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TasksScreen())),
+        child: Text(open.isEmpty ? tr('Öffnen', 'Open') : tr('Alle (${open.length})', 'All (${open.length})')),
+      ),
+      padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final o in abos)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => openOrderEditor(context, order: o),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    gradient: LinearGradient(colors: [for (final x in c.sun) x.withValues(alpha: 0.16)]),
+                    border: Border.all(color: c.sun.last.withValues(alpha: 0.6)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.autorenew, color: c.sun.last),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(tr('Abo aufgebraucht', 'Lesson pack used up'), style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text(
+                              '${s.client(o.clientId)?.displayName ?? o.title} · ${o.lessonsUsed}/${o.lessonsTotal}',
+                              style: TextStyle(color: c.muted, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SubscriptionDots(order: o, size: 8),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (open.isEmpty && abos.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(tr('Alles erledigt.', 'All done.'), style: TextStyle(color: c.muted)),
+            ),
+          for (final t in open.take(5)) TaskTile(task: t),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(onPressed: () => editTask(context), icon: const Icon(Icons.add), label: Text(tr('Aufgabe', 'Task'))),
+          ),
+        ],
+      ),
     );
   }
 }

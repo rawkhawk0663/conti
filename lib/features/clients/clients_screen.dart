@@ -5,7 +5,10 @@ import '../../app/theme.dart';
 import '../../core/conti_state.dart';
 import '../../core/model/crm.dart';
 import '../../core/money.dart';
+import '../../widgets/context_menu.dart';
 import '../../widgets/visuals.dart';
+import '../orders/order_editor.dart';
+import '../tasks/tasks.dart';
 import '../sync/sync_page.dart';
 import 'client_editor.dart';
 import 'client_page.dart';
@@ -19,15 +22,42 @@ class ClientAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = client.displayName;
-    final parts = name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-    final initials = parts.isEmpty ? '?' : (parts.length == 1 ? parts.first.substring(0, 1) : '${parts.first[0]}${parts.last[0]}').toUpperCase();
-    final colors = [context.conti.sky, context.conti.mint, context.conti.pink, context.conti.sun][name.hashCode.abs() % 4];
+    final parts = name
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    final initials = parts.isEmpty
+        ? '?'
+        : (parts.length == 1
+                  ? parts.first.substring(0, 1)
+                  : '${parts.first[0]}${parts.last[0]}')
+              .toUpperCase();
+    final colors = [
+      context.conti.sky,
+      context.conti.mint,
+      context.conti.pink,
+      context.conti.sun,
+    ][name.hashCode.abs() % 4];
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight)),
-      child: Text(initials, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: size * 0.36)),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: size * 0.36,
+        ),
+      ),
     );
   }
 }
@@ -48,7 +78,54 @@ class _ClientsScreenState extends State<ClientsScreen> {
     super.dispose();
   }
 
-  void _open(Client c) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ClientPage(clientId: c.id)));
+  void _open(Client c) => Navigator.of(
+    context,
+  ).push(MaterialPageRoute<void>(builder: (_) => ClientPage(clientId: c.id)));
+
+  Future<void> _menu(Client x, Offset? at) async {
+    final s = ContiScope.read(context);
+    final choice = await showContextMenu<String>(
+      context,
+      at: at,
+      actions: [
+        MenuAction('open', Icons.open_in_new, tr('Öffnen', 'Open')),
+        MenuAction('edit', Icons.edit_outlined, tr('Bearbeiten', 'Edit')),
+        MenuAction(
+          'order',
+          Icons.work_outline,
+          tr('Neuer Auftrag', 'New order'),
+        ),
+        MenuAction('task', Icons.add_task, tr('Neue Aufgabe', 'New task')),
+        MenuAction(
+          'delete',
+          Icons.delete_outline,
+          tr('Löschen', 'Delete'),
+          danger: true,
+        ),
+      ],
+    );
+    if (!mounted) return;
+    switch (choice) {
+      case 'open':
+        _open(x);
+      case 'edit':
+        await editClient(context, client: x);
+      case 'order':
+        await openOrderEditor(context, clientId: x.id);
+      case 'task':
+        await editTask(context, clientId: x.id);
+      case 'delete':
+        await s.deleteClient(x);
+        if (mounted) {
+          showUndo(
+            context,
+            tr('Kunde gelöscht', 'Client deleted'),
+            () => s.saveClient(x.copy()..deleted = false),
+            undoLabel: tr('Rückgängig', 'Undo'),
+          );
+        }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,10 +133,23 @@ class _ClientsScreenState extends State<ClientsScreen> {
     final c = context.conti;
     final q = _search.text.trim().toLowerCase();
     final list = s.clients
-        .where((x) => q.isEmpty || [x.displayName, x.personName, x.city, x.email, x.phone].join(' ').toLowerCase().contains(q))
+        .where(
+          (x) =>
+              q.isEmpty ||
+              [
+                x.displayName,
+                x.personName,
+                x.city,
+                x.email,
+                x.phone,
+              ].join(' ').toLowerCase().contains(q),
+        )
         .toList();
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Kunden', 'Clients')), actions: const [SyncStatusButton(), SizedBox(width: 4)]),
+      appBar: AppBar(
+        title: Text(tr('Kunden', 'Clients')),
+        actions: const [SyncStatusButton(), SizedBox(width: 4)],
+      ),
       floatingActionButton: GradientFab(
         label: tr('Kunde', 'Client'),
         icon: Icons.add,
@@ -76,10 +166,18 @@ class _ClientsScreenState extends State<ClientsScreen> {
               controller: _search,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: tr('Suchen: Name, Ort, E-Mail …', 'Search: name, town, email …'),
+                hintText: tr(
+                  'Suchen: Name, Ort, E-Mail …',
+                  'Search: name, town, email …',
+                ),
                 prefixIcon: const Icon(Icons.search),
                 isDense: true,
-                suffixIcon: _search.text.isEmpty ? null : IconButton(icon: const Icon(Icons.close), onPressed: () => setState(_search.clear)),
+                suffixIcon: _search.text.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => setState(_search.clear),
+                      ),
               ),
             ),
           ),
@@ -87,7 +185,9 @@ class _ClientsScreenState extends State<ClientsScreen> {
             child: list.isEmpty
                 ? EmptyState(
                     icon: Icons.people_outline,
-                    title: q.isEmpty ? tr('Noch keine Kunden', 'No clients yet') : tr('Nichts gefunden', 'Nothing found'),
+                    title: q.isEmpty
+                        ? tr('Noch keine Kunden', 'No clients yet')
+                        : tr('Nichts gefunden', 'Nothing found'),
                     text: tr(
                       'Lege Kundinnen und Kunden mit Adresse an. Die Adresse kommt später so auf die Rechnung und in den QR-Zahlteil.',
                       'Add clients with their address. It later goes onto the invoice and into the QR payment part.',
@@ -102,27 +202,63 @@ class _ClientsScreenState extends State<ClientsScreen> {
                           child: Column(
                             children: [
                               for (final x in list)
-                                ListTile(
-                                  leading: ClientAvatar(x),
-                                  title: Text(x.displayName),
-                                  subtitle: Text(
-                                    [if (x.company.isNotEmpty && x.personName.isNotEmpty) x.personName, x.city].where((t) => t.isNotEmpty).join(' · '),
+                                ContextMenuArea(
+                                  onMenu: (at) => _menu(x, at),
+                                  child: ListTile(
+                                    leading: ClientAvatar(x),
+                                    title: Text(x.displayName),
+                                    subtitle: Text(
+                                      [
+                                        if (x.company.isNotEmpty &&
+                                            x.personName.isNotEmpty)
+                                          x.personName,
+                                        x.city,
+                                      ].where((t) => t.isNotEmpty).join(' · '),
+                                    ),
+                                    trailing: Builder(
+                                      builder: (context) {
+                                        final open = s.openAmountOf(x.id);
+                                        final active = s
+                                            .ordersOf(x.id)
+                                            .where(
+                                              (o) =>
+                                                  o.status !=
+                                                      OrderStatus.paid &&
+                                                  o.status !=
+                                                      OrderStatus.cancelled,
+                                            )
+                                            .length;
+                                        return Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            if (open > 0)
+                                              Text(
+                                                '${Money.format(open)} ${tr('offen', 'due')}',
+                                                style: TextStyle(
+                                                  color: c.minus,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            if (active > 0)
+                                              Text(
+                                                tr(
+                                                  '$active aktiv',
+                                                  '$active active',
+                                                ),
+                                                style: TextStyle(
+                                                  color: c.muted,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                    onTap: () => _open(x),
                                   ),
-                                  trailing: Builder(
-                                    builder: (context) {
-                                      final open = s.openAmountOf(x.id);
-                                      final active = s.ordersOf(x.id).where((o) => o.status != OrderStatus.paid && o.status != OrderStatus.cancelled).length;
-                                      return Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          if (open > 0) Text('${Money.format(open)} ${tr('offen', 'due')}', style: TextStyle(color: c.minus, fontSize: 13)),
-                                          if (active > 0) Text(tr('$active aktiv', '$active active'), style: TextStyle(color: c.muted, fontSize: 12)),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                  onTap: () => _open(x),
                                 ),
                             ],
                           ),

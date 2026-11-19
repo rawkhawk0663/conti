@@ -7,10 +7,15 @@ import '../../core/dates.dart';
 import '../../core/deadlines.dart';
 import '../../core/model/crm.dart';
 import '../../core/model/synced.dart';
+import '../../widgets/context_menu.dart';
 import '../../widgets/visuals.dart';
 
 /// Aufgabe anlegen ([task] == null) oder ändern. [clientId]: vorgewählter Kunde.
-Future<void> editTask(BuildContext context, {Task? task, String? clientId}) async {
+Future<void> editTask(
+  BuildContext context, {
+  Task? task,
+  String? clientId,
+}) async {
   final s = ContiScope.read(context);
   final t = task?.copy() ?? Task(id: newId(), title: '', clientId: clientId);
   final title = TextEditingController(text: t.title);
@@ -20,7 +25,9 @@ Future<void> editTask(BuildContext context, {Task? task, String? clientId}) asyn
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        title: Text(task == null ? tr('Neue Aufgabe', 'New task') : tr('Aufgabe', 'Task')),
+        title: Text(
+          task == null ? tr('Neue Aufgabe', 'New task') : tr('Aufgabe', 'Task'),
+        ),
         content: SizedBox(
           width: 460,
           child: SingleChildScrollView(
@@ -31,7 +38,9 @@ Future<void> editTask(BuildContext context, {Task? task, String? clientId}) asyn
                   controller: title,
                   autofocus: task == null,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(labelText: tr('Was ist zu tun?', 'What needs doing?')),
+                  decoration: InputDecoration(
+                    labelText: tr('Was ist zu tun?', 'What needs doing?'),
+                  ),
                 ),
                 const SizedBox(height: 14),
                 Row(
@@ -49,8 +58,15 @@ Future<void> editTask(BuildContext context, {Task? task, String? clientId}) asyn
                           if (d != null) setState(() => t.due = d);
                         },
                         child: InputDecorator(
-                          decoration: InputDecoration(labelText: tr('Frist', 'Deadline'), suffixIcon: const Icon(Icons.event)),
-                          child: Text(t.due == null ? tr('Ohne Frist', 'No deadline') : Day.short(t.due!)),
+                          decoration: InputDecoration(
+                            labelText: tr('Frist', 'Deadline'),
+                            suffixIcon: const Icon(Icons.event),
+                          ),
+                          child: Text(
+                            t.due == null
+                                ? tr('Ohne Frist', 'No deadline')
+                                : Day.short(t.due!),
+                          ),
                         ),
                       ),
                     ),
@@ -64,12 +80,24 @@ Future<void> editTask(BuildContext context, {Task? task, String? clientId}) asyn
                 ),
                 const SizedBox(height: 14),
                 DropdownButtonFormField<String?>(
-                  initialValue: s.clients.any((c) => c.id == t.clientId) ? t.clientId : null,
+                  initialValue: s.clients.any((c) => c.id == t.clientId)
+                      ? t.clientId
+                      : null,
                   isExpanded: true,
                   decoration: InputDecoration(labelText: tr('Kunde', 'Client')),
                   items: [
-                    DropdownMenuItem(value: null, child: Text(tr('Allgemein', 'General'))),
-                    for (final c in s.clients) DropdownMenuItem(value: c.id, child: Text(c.displayName, overflow: TextOverflow.ellipsis)),
+                    DropdownMenuItem(
+                      value: null,
+                      child: Text(tr('Allgemein', 'General')),
+                    ),
+                    for (final c in s.clients)
+                      DropdownMenuItem(
+                        value: c.id,
+                        child: Text(
+                          c.displayName,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                   ],
                   onChanged: (v) => setState(() => t.clientId = v),
                 ),
@@ -83,7 +111,12 @@ Future<void> editTask(BuildContext context, {Task? task, String? clientId}) asyn
                 if (error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    child: Text(
+                      error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -98,11 +131,19 @@ Future<void> editTask(BuildContext context, {Task? task, String? clientId}) asyn
               },
               child: Text(tr('Löschen', 'Delete')),
             ),
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('Abbrechen', 'Cancel'))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(tr('Abbrechen', 'Cancel')),
+          ),
           FilledButton(
             onPressed: () {
               if (title.text.trim().isEmpty) {
-                setState(() => error = tr('Bitte beschreiben, was zu tun ist.', 'Please describe what needs doing.'));
+                setState(
+                  () => error = tr(
+                    'Bitte beschreiben, was zu tun ist.',
+                    'Please describe what needs doing.',
+                  ),
+                );
                 return;
               }
               t
@@ -139,55 +180,117 @@ class TaskTile extends StatelessWidget {
     final c = context.conti;
     final u = Urgency.of(task, s.business.deadlineRules);
     final who = showClient ? s.client(task.clientId)?.displayName : null;
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: () => editTask(context, task: task),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          children: [
-            Checkbox(value: task.done, onChanged: (_) => toggleTask(s, task)),
-            const SizedBox(width: 4),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    task.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+    return ContextMenuArea(
+      onMenu: (at) => showTaskMenu(context, task, at: at),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => editTask(context, task: task),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            children: [
+              Checkbox(value: task.done, onChanged: (_) => toggleTask(s, task)),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        decoration: task.done
+                            ? TextDecoration.lineThrough
+                            : null,
+                        color: task.done ? c.muted : null,
+                      ),
+                    ),
+                    Text(
+                      [
+                            ?who,
+                            if (task.due != null) Day.short(task.due!),
+                          ].join(' · ').isEmpty
+                          ? tr('Allgemein', 'General')
+                          : [
+                              ?who,
+                              if (task.due != null) Day.short(task.due!),
+                            ].join(' · '),
+                      style: TextStyle(color: c.muted, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              if (!task.done && task.due != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (u.color ?? c.track).withValues(
+                      alpha: u.color == null ? 1 : 0.18,
+                    ),
+                    borderRadius: BorderRadius.circular(999),
+                    border: u.color == null
+                        ? null
+                        : Border.all(color: u.color!.withValues(alpha: 0.7)),
+                  ),
+                  child: Text(
+                    u.label,
                     style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      decoration: task.done ? TextDecoration.lineThrough : null,
-                      color: task.done ? c.muted : null,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: u.color ?? c.muted,
                     ),
                   ),
-                  Text(
-                    [?who, if (task.due != null) Day.short(task.due!)].join(' · ').isEmpty
-                        ? tr('Allgemein', 'General')
-                        : [?who, if (task.due != null) Day.short(task.due!)].join(' · '),
-                    style: TextStyle(color: c.muted, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-            if (!task.done && task.due != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: (u.color ?? c.track).withValues(alpha: u.color == null ? 1 : 0.18),
-                  borderRadius: BorderRadius.circular(999),
-                  border: u.color == null ? null : Border.all(color: u.color!.withValues(alpha: 0.7)),
                 ),
-                child: Text(
-                  u.label,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: u.color ?? c.muted),
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+}
+
+/// Menü einer Aufgabe: erledigt, bearbeiten, löschen.
+Future<void> showTaskMenu(BuildContext context, Task t, {Offset? at}) async {
+  final s = ContiScope.read(context);
+  final choice = await showContextMenu<String>(
+    context,
+    at: at,
+    actions: [
+      MenuAction(
+        'toggle',
+        t.done ? Icons.undo : Icons.check,
+        t.done ? tr('Wieder offen', 'Reopen') : tr('Erledigt', 'Done'),
+      ),
+      MenuAction('edit', Icons.edit_outlined, tr('Bearbeiten', 'Edit')),
+      MenuAction(
+        'delete',
+        Icons.delete_outline,
+        tr('Löschen', 'Delete'),
+        danger: true,
+      ),
+    ],
+  );
+  if (!context.mounted) return;
+  switch (choice) {
+    case 'toggle':
+      await toggleTask(s, t);
+    case 'edit':
+      await editTask(context, task: t);
+    case 'delete':
+      await s.deleteTask(t);
+      if (context.mounted) {
+        showUndo(
+          context,
+          tr('Aufgabe gelöscht', 'Task deleted'),
+          () => s.saveTask(t.copy()..deleted = false),
+          undoLabel: tr('Rückgängig', 'Undo'),
+        );
+      }
   }
 }
 
@@ -206,11 +309,18 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget build(BuildContext context) {
     final s = ContiScope.of(context);
     final list = _done
-        ? (s.tasks.where((t) => t.done).toList()..sort((a, b) => (b.doneAt ?? b.updatedAt).compareTo(a.doneAt ?? a.updatedAt)))
+        ? (s.tasks.where((t) => t.done).toList()..sort(
+            (a, b) =>
+                (b.doneAt ?? b.updatedAt).compareTo(a.doneAt ?? a.updatedAt),
+          ))
         : s.openTasks;
     return Scaffold(
       appBar: AppBar(title: Text(tr('Aufgaben', 'Tasks'))),
-      floatingActionButton: GradientFab(label: tr('Aufgabe', 'Task'), icon: Icons.add, onPressed: () => editTask(context)),
+      floatingActionButton: GradientFab(
+        label: tr('Aufgabe', 'Task'),
+        icon: Icons.add,
+        onPressed: () => editTask(context),
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),
@@ -220,7 +330,10 @@ class _TasksScreenState extends State<TasksScreen> {
               SegmentedButton<bool>(
                 segments: [
                   ButtonSegment(value: false, label: Text(tr('Offen', 'Open'))),
-                  ButtonSegment(value: true, label: Text(tr('Erledigt', 'Done'))),
+                  ButtonSegment(
+                    value: true,
+                    label: Text(tr('Erledigt', 'Done')),
+                  ),
                 ],
                 selected: {_done},
                 showSelectedIcon: false,
@@ -230,7 +343,9 @@ class _TasksScreenState extends State<TasksScreen> {
               if (list.isEmpty)
                 EmptyState(
                   icon: Icons.task_alt,
-                  title: _done ? tr('Noch nichts erledigt', 'Nothing done yet') : tr('Keine offenen Aufgaben', 'No open tasks'),
+                  title: _done
+                      ? tr('Noch nichts erledigt', 'Nothing done yet')
+                      : tr('Keine offenen Aufgaben', 'No open tasks'),
                   text: tr(
                     'Aufgaben mit Frist bekommen eine Farbe, je näher die Frist rückt. Conti erinnert dich auch mit einer Mitteilung.',
                     'Tasks with a deadline change colour as it gets closer. Conti also reminds you with a notification.',
@@ -240,7 +355,9 @@ class _TasksScreenState extends State<TasksScreen> {
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(children: [for (final t in list) TaskTile(task: t)]),
+                    child: Column(
+                      children: [for (final t in list) TaskTile(task: t)],
+                    ),
                   ),
                 ),
             ],

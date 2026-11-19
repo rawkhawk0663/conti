@@ -5,7 +5,6 @@ import '../../app/theme.dart';
 import '../../core/conti_state.dart';
 import '../../core/dates.dart';
 import '../../core/model/entry.dart';
-import '../../core/model/synced.dart';
 import '../../core/money.dart';
 import '../../widgets/visuals.dart';
 import '../sync/sync_page.dart';
@@ -57,42 +56,6 @@ class _EntriesScreenState extends State<EntriesScreen> {
       Day.short(e.date),
     ].join(' ').toLowerCase();
     return q.split(RegExp(r'\s+')).every(hay.contains);
-  }
-
-  Future<void> _entryMenu(Entry e) async {
-    final s = ContiScope.read(context);
-    final choice = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(leading: const Icon(Icons.edit_outlined), title: Text(tr('Bearbeiten', 'Edit')), onTap: () => Navigator.pop(context, 'edit')),
-            ListTile(
-              leading: const Icon(Icons.copy_outlined),
-              title: Text(tr('Als neue Buchung kopieren', 'Copy as new entry')),
-              onTap: () => Navigator.pop(context, 'copy'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: Text(tr('Löschen', 'Delete')),
-              onTap: () => Navigator.pop(context, 'delete'),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (!mounted) return;
-    switch (choice) {
-      case 'edit':
-        await openEntryEditor(context, entry: e);
-      case 'copy':
-        final c = Entry.fromJson({...e.toJson(), 'id': newId(), 'attachments': <dynamic>[]})..date = Day.today();
-        await openEntryEditor(context, entry: c, isNew: true);
-      case 'delete':
-        await deleteWithUndo(context, s, e);
-    }
   }
 
   @override
@@ -226,7 +189,6 @@ class _EntriesScreenState extends State<EntriesScreen> {
                                   EntryTile(
                                     entry: e,
                                     onTap: () => openEntryEditor(context, entry: e),
-                                    onLongPress: () => _entryMenu(e),
                                   ),
                               ],
                             ),
@@ -285,18 +247,4 @@ class _Menu<T> extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Löschen mit „Rückgängig“.
-Future<void> deleteWithUndo(BuildContext context, ContiState s, Entry e) async {
-  final messenger = ScaffoldMessenger.of(context);
-  await s.deleteEntry(e);
-  messenger.showSnackBar(
-    SnackBar(
-      content: Text(tr('Buchung gelöscht', 'Entry deleted')),
-      persist: false,
-      duration: const Duration(seconds: 6),
-      action: SnackBarAction(label: tr('Rückgängig', 'Undo'), onPressed: () => s.restoreEntry(e)),
-    ),
-  );
 }

@@ -5,7 +5,9 @@ import '../../app/theme.dart';
 import '../../core/conti_state.dart';
 import '../../core/dates.dart';
 import '../../core/model/crm.dart';
+import '../../core/model/synced.dart';
 import '../../core/money.dart';
+import '../../widgets/context_menu.dart';
 import '../../widgets/visuals.dart';
 import 'order_editor.dart';
 
@@ -45,7 +47,14 @@ class StatusPill extends StatelessWidget {
         border: Border.all(color: colors.last.withValues(alpha: 0.8)),
         color: colors.last.withValues(alpha: 0.14),
       ),
-      child: Text(statusLabel(status), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.last)),
+      child: Text(
+        statusLabel(status),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: colors.last,
+        ),
+      ),
     );
   }
 }
@@ -66,7 +75,14 @@ class SubscriptionDots extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (many)
-          SizedBox(width: 90, child: GradientBar(value: total == 0 ? 0 : used / total, colors: c.pink, height: 6))
+          SizedBox(
+            width: 90,
+            child: GradientBar(
+              value: total == 0 ? 0 : used / total,
+              colors: c.pink,
+              height: 6,
+            ),
+          )
         else
           for (var i = 0; i < total; i++)
             Container(
@@ -80,7 +96,14 @@ class SubscriptionDots extends StatelessWidget {
               ),
             ),
         const SizedBox(width: 6),
-        Text('$used/$total', style: TextStyle(color: c.muted, fontSize: 12, fontFeatures: const [FontFeature.tabularFigures()])),
+        Text(
+          '$used/$total',
+          style: TextStyle(
+            color: c.muted,
+            fontSize: 12,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
       ],
     );
   }
@@ -104,41 +127,112 @@ class OrderTile extends StatelessWidget {
       ?who,
       if (o.date != null) Day.short(o.date!),
     ].where((x) => x.isNotEmpty).join(' · ');
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: () => openOrderEditor(context, order: o),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return ContextMenuArea(
+      onMenu: (at) => showOrderMenu(context, o, at: at),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => openOrderEditor(context, order: o),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      o.title.isEmpty ? tr('Ohne Titel', 'Untitled') : o.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      sub,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: c.muted, fontSize: 13),
+                    ),
+                    if (o.isSubscription) ...[
+                      const SizedBox(height: 6),
+                      SubscriptionDots(order: o),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    o.title.isEmpty ? tr('Ohne Titel', 'Untitled') : o.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    Money.format(o.total),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.muted, fontSize: 13)),
-                  if (o.isSubscription) ...[const SizedBox(height: 6), SubscriptionDots(order: o)],
+                  const SizedBox(height: 4),
+                  StatusPill(o.status),
                 ],
               ),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(Money.format(o.total), style: const TextStyle(fontWeight: FontWeight.w500, fontFeatures: [FontFeature.tabularFigures()])),
-                const SizedBox(height: 4),
-                StatusPill(o.status),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+}
+
+/// Menü eines Auftrags: Bearbeiten, kopieren, löschen.
+Future<void> showOrderMenu(BuildContext context, Order o, {Offset? at}) async {
+  final s = ContiScope.read(context);
+  final choice = await showContextMenu<String>(
+    context,
+    at: at,
+    actions: [
+      MenuAction('edit', Icons.edit_outlined, tr('Bearbeiten', 'Edit')),
+      MenuAction(
+        'copy',
+        Icons.copy_outlined,
+        tr('Als neuen Auftrag kopieren', 'Copy as new order'),
+      ),
+      MenuAction(
+        'delete',
+        Icons.delete_outline,
+        tr('Löschen', 'Delete'),
+        danger: true,
+      ),
+    ],
+  );
+  if (!context.mounted) return;
+  switch (choice) {
+    case 'edit':
+      await openOrderEditor(context, order: o);
+    case 'copy':
+      final c = Order(
+        id: newId(),
+        number: s.nextOrderNumber(),
+        title: o.title,
+        kind: o.kind,
+        clientId: o.clientId,
+        lessonsTotal: o.lessonsTotal,
+        notes: o.notes,
+        items: [
+          for (final i in o.items)
+            OrderItem.fromJson({...i.toJson(), 'id': newId()}),
+        ],
+      );
+      await s.saveOrder(c);
+      if (context.mounted) await openOrderEditor(context, order: c);
+    case 'delete':
+      await s.deleteOrder(o);
+      if (context.mounted) {
+        showUndo(
+          context,
+          tr('Auftrag gelöscht', 'Order deleted'),
+          () => s.saveOrder(o.copy()..deleted = false),
+          undoLabel: tr('Rückgängig', 'Undo'),
+        );
+      }
   }
 }

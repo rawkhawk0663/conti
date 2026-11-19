@@ -28,7 +28,8 @@ Der Bauplan liegt als Artifact „Conti Bauplan“ beim Besitzer. Pakete:
 - Dunkle Karten (`#18191D` auf `#0D0E11`), feine grosse Zahlen (IBM Plex Sans 300), Überschriften Sora. Heller Modus gleichwertig.
 - Verläufe mit fester Bedeutung (`ContiColors` in `lib/app/theme.dart`): **Mint-Blau** Einnahmen/bezahlt, **Gelb-Pink** Ausgaben/fällig, **Pink-Violett** Gewinn/Hauptknöpfe/App-Symbol, **Türkis-Blau** Umbuchungen/Sync/Hinweise.
 - Bausteine in `lib/widgets/visuals.dart`: `SectionCard`, `GradientRing`, `GradientBar`, `GradientButton`, `GradientFab`, `MonthBars`, `AmountText`, `BigNumber`, `CapsLabel`, `ContiMark`, `EmptyState`.
-- „Neu“/„Hinzufügen“ immer als schwebender Knopf unten rechts (`GradientFab`), Listen darunter brauchen unten ~110 Punkte Platz. Langes Drücken = Rechtsklick (Menü). Hinweise (`Tooltip`) nur mit der Maus.
+- „Neu“/„Hinzufügen“ immer als schwebender Knopf unten rechts (`GradientFab`), Listen darunter brauchen unten ~110 Punkte Platz. Hinweise (`Tooltip`) nur mit der Maus.
+- **Kontextmenüs** (Wunsch des Besitzers): Rechtsklick *und* langes Drücken, über `ContextMenuArea` und `showContextMenu` (`lib/widgets/context_menu.dart`). Auf dem Computer erscheint das Menü an der Stelle des Zeigers bzw. Fingers, auf dem Handy als Blatt von unten. Neue Listen bekommen das auch. Löschen aus dem Menü mit „Rückgängig“ (`showUndo`).
 - Navigation: ab 840 Punkten Breite Leiste links (`NavigationRail`), sonst unten (`NavigationBar`), `lib/features/shell/home_shell.dart`.
 - App-Symbol: `tool/make_icon.py` (Verlauf Pink → Violett, weisses „C“ mit Punkt). Schriften: feste Schnitte aus `tool/make_fonts.py`.
 
@@ -83,6 +84,7 @@ lib/
 ## Technik
 - Flutter `3.47.9` (in `.github/workflows/build.yml`), Material 3. `window_manager` bleibt auf 0.5.x (0.6 braucht beim Testen GTK-Entwicklungsdateien).
 - Jeder Push auf `main` baut Windows (`Conti-Windows.zip`, `Conti-Setup.exe`) und Android (`Conti-Android.apk`) und veröffentlicht sie unter Releases in diesem Projekt. „Nach Updates suchen“ holt sie von dort (`Updater.repo`). Versionsnummer `v0.1.<run_number>` über `--dart-define=CONTI_VERSION`.
+- Android-Updates: über „Nach Updates suchen“ (öffnet die Download-Seite) oder automatisch mit Obtainium (Adresse des Projekts eintragen; die Version im Release-Tag `v0.1.n` passt zur versionName `0.1.n` der APK). Dafür muss jede APK mit demselben Schlüssel signiert sein.
 - Android wird mit festem Schlüssel signiert, wenn die Geheimnisse `CONTI_KEYSTORE` (Base64 der .jks) und `CONTI_KEYSTORE_PASSWORD` gesetzt sind (Alias `conti`). Sonst Test-Schlüssel (dann geht ein Update nur nach Entfernen der App). Den Schlüssel hat der Besitzer, er liegt nie im Projekt.
 
 ## Prüfen

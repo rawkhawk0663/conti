@@ -6,6 +6,7 @@ import '../../core/conti_state.dart';
 import '../../core/model/crm.dart';
 import '../../core/model/synced.dart';
 import '../../core/money.dart';
+import '../../widgets/context_menu.dart';
 import '../../widgets/visuals.dart';
 
 String unitLabel(PriceUnit u) => switch (u) {
@@ -40,23 +41,78 @@ class _ProductsScreenState extends State<ProductsScreen> {
     super.dispose();
   }
 
+  Future<void> _menu(Product p, Offset? at) async {
+    final s = ContiScope.read(context);
+    final choice = await showContextMenu<String>(
+      context,
+      at: at,
+      actions: [
+        MenuAction('edit', Icons.edit_outlined, tr('Bearbeiten', 'Edit')),
+        MenuAction('copy', Icons.copy_outlined, tr('Kopieren', 'Duplicate')),
+        MenuAction(
+          'delete',
+          Icons.delete_outline,
+          tr('Löschen', 'Delete'),
+          danger: true,
+        ),
+      ],
+    );
+    if (!mounted) return;
+    switch (choice) {
+      case 'edit':
+        await editProduct(context, product: p);
+      case 'copy':
+        final c = Product.fromJson({
+          ...p.toJson(),
+          'id': newId(),
+          'name': tr('${p.name} (Kopie)', '${p.name} (copy)'),
+        });
+        await s.saveProduct(c);
+        if (mounted) await editProduct(context, product: c);
+      case 'delete':
+        await s.deleteProduct(p);
+        if (mounted) {
+          showUndo(
+            context,
+            tr('Produkt gelöscht', 'Product deleted'),
+            () => s.saveProduct(p.copy()..deleted = false),
+            undoLabel: tr('Rückgängig', 'Undo'),
+          );
+        }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = ContiScope.of(context);
     final c = context.conti;
     final q = _search.text.trim().toLowerCase();
-    final list = s.products
-        .where((p) => q.isEmpty || '${p.name} ${p.description} ${p.group}'.toLowerCase().contains(q))
-        .toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final list =
+        s.products
+            .where(
+              (p) =>
+                  q.isEmpty ||
+                  '${p.name} ${p.description} ${p.group}'
+                      .toLowerCase()
+                      .contains(q),
+            )
+            .toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
     final groups = <String, List<Product>>{};
     for (final p in list) {
       groups.putIfAbsent(p.group.trim(), () => []).add(p);
     }
-    final keys = groups.keys.toList()..sort((a, b) => a.isEmpty ? 1 : (b.isEmpty ? -1 : a.compareTo(b)));
+    final keys = groups.keys.toList()
+      ..sort((a, b) => a.isEmpty ? 1 : (b.isEmpty ? -1 : a.compareTo(b)));
     return Scaffold(
       appBar: AppBar(title: Text(tr('Produkte', 'Products'))),
-      floatingActionButton: GradientFab(label: tr('Produkt', 'Product'), icon: Icons.add, onPressed: () => editProduct(context)),
+      floatingActionButton: GradientFab(
+        label: tr('Produkt', 'Product'),
+        icon: Icons.add,
+        onPressed: () => editProduct(context),
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 860),
@@ -70,14 +126,21 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   hintText: tr('Suchen …', 'Search …'),
                   prefixIcon: const Icon(Icons.search),
                   isDense: true,
-                  suffixIcon: _search.text.isEmpty ? null : IconButton(icon: const Icon(Icons.close), onPressed: () => setState(_search.clear)),
+                  suffixIcon: _search.text.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => setState(_search.clear),
+                        ),
                 ),
               ),
               const SizedBox(height: 12),
               if (list.isEmpty)
                 EmptyState(
                   icon: Icons.sell_outlined,
-                  title: q.isEmpty ? tr('Noch keine Produkte', 'No products yet') : tr('Nichts gefunden', 'Nothing found'),
+                  title: q.isEmpty
+                      ? tr('Noch keine Produkte', 'No products yet')
+                      : tr('Nichts gefunden', 'Nothing found'),
                   text: tr(
                     'Produkte und Leistungen mit Preis, z. B. „Gig“, „Lektion 45 Minuten“ oder „Flyer-Gestaltung pro Stunde“. In Aufträgen wählst du sie dann aus.',
                     'Products and services with a price, e.g. “Gig”, “45-minute lesson” or “Flyer design per hour”. You then pick them in orders.',
@@ -86,7 +149,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
               for (final g in keys) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
-                  child: CapsLabel(g.isEmpty ? tr('Ohne Gruppe', 'No group') : g),
+                  child: CapsLabel(
+                    g.isEmpty ? tr('Ohne Gruppe', 'No group') : g,
+                  ),
                 ),
                 Card(
                   child: Padding(
@@ -94,21 +159,41 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     child: Column(
                       children: [
                         for (final p in groups[g]!)
-                          ListTile(
-                            title: Text(p.name),
-                            subtitle: p.description.isEmpty ? null : Text(p.description, maxLines: 1, overflow: TextOverflow.ellipsis),
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'CHF ${Money.format(p.price)}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontFeatures: [FontFeature.tabularFigures()]),
-                                ),
-                                Text(unitLabel(p.unit), style: TextStyle(color: c.muted, fontSize: 12)),
-                              ],
+                          ContextMenuArea(
+                            onMenu: (at) => _menu(p, at),
+                            child: ListTile(
+                              title: Text(p.name),
+                              subtitle: p.description.isEmpty
+                                  ? null
+                                  : Text(
+                                      p.description,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                              trailing: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'CHF ${Money.format(p.price)}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontFeatures: [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    unitLabel(p.unit),
+                                    style: TextStyle(
+                                      color: c.muted,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              onTap: () => editProduct(context, product: p),
                             ),
-                            onTap: () => editProduct(context, product: p),
                           ),
                       ],
                     ),
@@ -130,25 +215,43 @@ Future<Product?> editProduct(BuildContext context, {Product? product}) async {
   final name = TextEditingController(text: x.name);
   final desc = TextEditingController(text: x.description);
   final group = TextEditingController(text: x.group);
-  final price = TextEditingController(text: x.price == 0 ? '' : Money.forInput(x.price));
+  final price = TextEditingController(
+    text: x.price == 0 ? '' : Money.forInput(x.price),
+  );
   final groups = {for (final p in s.products) p.group.trim()}..remove('');
   String? error;
   final ok = await showDialog<bool>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        title: Text(product == null ? tr('Neues Produkt', 'New product') : tr('Produkt', 'Product')),
+        title: Text(
+          product == null
+              ? tr('Neues Produkt', 'New product')
+              : tr('Produkt', 'Product'),
+        ),
         content: SizedBox(
           width: 460,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: name, autofocus: product == null, decoration: InputDecoration(labelText: tr('Name', 'Name'), hintText: tr('z. B. Gig', 'e.g. Gig'))),
+                TextField(
+                  controller: name,
+                  autofocus: product == null,
+                  decoration: InputDecoration(
+                    labelText: tr('Name', 'Name'),
+                    hintText: tr('z. B. Gig', 'e.g. Gig'),
+                  ),
+                ),
                 const SizedBox(height: 14),
                 TextField(
                   controller: desc,
-                  decoration: InputDecoration(labelText: tr('Beschreibung (steht auf der Rechnung)', 'Description (shown on the invoice)')),
+                  decoration: InputDecoration(
+                    labelText: tr(
+                      'Beschreibung (steht auf der Rechnung)',
+                      'Description (shown on the invoice)',
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 14),
                 Row(
@@ -156,8 +259,13 @@ Future<Product?> editProduct(BuildContext context, {Product? product}) async {
                     Expanded(
                       child: TextField(
                         controller: price,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(labelText: 'CHF', hintText: '0.00'),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'CHF',
+                          hintText: '0.00',
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -165,8 +273,16 @@ Future<Product?> editProduct(BuildContext context, {Product? product}) async {
                       child: DropdownButtonFormField<PriceUnit>(
                         initialValue: x.unit,
                         isExpanded: true,
-                        decoration: InputDecoration(labelText: tr('Einheit', 'Unit')),
-                        items: [for (final u in PriceUnit.values) DropdownMenuItem(value: u, child: Text(unitLabel(u)))],
+                        decoration: InputDecoration(
+                          labelText: tr('Einheit', 'Unit'),
+                        ),
+                        items: [
+                          for (final u in PriceUnit.values)
+                            DropdownMenuItem(
+                              value: u,
+                              child: Text(unitLabel(u)),
+                            ),
+                        ],
                         onChanged: (v) => setState(() => x.unit = v ?? x.unit),
                       ),
                     ),
@@ -175,19 +291,36 @@ Future<Product?> editProduct(BuildContext context, {Product? product}) async {
                 const SizedBox(height: 14),
                 Autocomplete<String>(
                   initialValue: TextEditingValue(text: x.group),
-                  optionsBuilder: (v) => groups.where((g) => g.toLowerCase().contains(v.text.toLowerCase())),
-                  onSelected: (v) => group.text = v,
-                  fieldViewBuilder: (context, ctl, focus, onSubmit) => TextField(
-                    controller: ctl,
-                    focusNode: focus,
-                    onChanged: (v) => group.text = v,
-                    decoration: InputDecoration(labelText: tr('Gruppe (optional)', 'Group (optional)'), hintText: tr('z. B. Musik, Grafik', 'e.g. Music, Design')),
+                  optionsBuilder: (v) => groups.where(
+                    (g) => g.toLowerCase().contains(v.text.toLowerCase()),
                   ),
+                  onSelected: (v) => group.text = v,
+                  fieldViewBuilder: (context, ctl, focus, onSubmit) =>
+                      TextField(
+                        controller: ctl,
+                        focusNode: focus,
+                        onChanged: (v) => group.text = v,
+                        decoration: InputDecoration(
+                          labelText: tr(
+                            'Gruppe (optional)',
+                            'Group (optional)',
+                          ),
+                          hintText: tr(
+                            'z. B. Musik, Grafik',
+                            'e.g. Music, Design',
+                          ),
+                        ),
+                      ),
                 ),
                 if (error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    child: Text(
+                      error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -202,16 +335,29 @@ Future<Product?> editProduct(BuildContext context, {Product? product}) async {
               },
               child: Text(tr('Löschen', 'Delete')),
             ),
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('Abbrechen', 'Cancel'))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(tr('Abbrechen', 'Cancel')),
+          ),
           FilledButton(
             onPressed: () {
               final p = price.text.trim().isEmpty ? 0 : Money.parse(price.text);
               if (name.text.trim().isEmpty) {
-                setState(() => error = tr('Bitte einen Namen eingeben.', 'Please enter a name.'));
+                setState(
+                  () => error = tr(
+                    'Bitte einen Namen eingeben.',
+                    'Please enter a name.',
+                  ),
+                );
                 return;
               }
               if (p == null || p < 0) {
-                setState(() => error = tr('Der Preis ist keine Zahl.', 'The price is not a number.'));
+                setState(
+                  () => error = tr(
+                    'Der Preis ist keine Zahl.',
+                    'The price is not a number.',
+                  ),
+                );
                 return;
               }
               x
@@ -247,7 +393,10 @@ Future<Product?> pickProduct(BuildContext context) {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-            child: Text(tr('Produkt wählen', 'Choose a product'), style: Theme.of(context).textTheme.titleMedium),
+            child: Text(
+              tr('Produkt wählen', 'Choose a product'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
           for (final p in s.products..sort((a, b) => a.name.compareTo(b.name)))
             ListTile(

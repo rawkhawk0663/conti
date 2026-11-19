@@ -30,7 +30,7 @@ Conti is a simple cash book for sole traders and freelancers: income, expenses, 
 - **Import** from the previous bookkeeping app (`.json` file), with a preview. Importing twice creates no duplicates.
 - **Sync via Dropbox** between Windows and Android: at start-up, every two minutes and shortly after every change. What two devices record offline is merged. The data lives in your Dropbox in the “Apps” folder.
 - **Backups:** automatically once a day, plus by hand as a ZIP file. Restoring never deletes anything.
-- **Light and dark**, German and English. Works with finger, pen, mouse and keyboard.
+- **Light and dark**, German and English. Works with finger, pen, mouse and keyboard. Right-click (or a long press) opens a menu on entries, clients, orders, products and tasks.
 - **Updates** right in the app: *Settings → About Conti → Check for updates*.
 
 ## Coming soon
@@ -47,6 +47,7 @@ The latest version is under [Releases](https://github.com/rawkhawk0663/conti/rel
 
 - **Windows 10/11:** download and run `Conti-Setup.exe`. If Windows says "Windows protected your PC": *More info → Run anyway*. Without installing: unzip `Conti-Windows.zip` and run `Conti.exe`.
 - **Android:** download `Conti-Android.apk` on your phone and open it. Android asks whether apps from this source may be installed.
+- **Android with automatic updates:** in the [Obtainium](https://github.com/ImranR98/Obtainium) app choose “Add app” and enter `https://github.com/rawkhawk0663/conti`. Obtainium notifies you about and installs every new version.
 
 ## Your data
 

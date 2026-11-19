@@ -30,7 +30,7 @@ Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständi
 - **Import** aus der früheren Buchhaltungs-App (Datei `.json`), mit Vorschau. Ein zweiter Import erzeugt nichts doppelt.
 - **Abgleich über Dropbox** zwischen Windows und Android: beim Start, alle zwei Minuten und kurz nach jeder Änderung. Was zwei Geräte ohne Netz erfassen, wird zusammengeführt. Die Daten liegen in deiner Dropbox im Ordner „Apps“.
 - **Sicherungen:** automatisch einmal am Tag, dazu von Hand als ZIP-Datei. Einspielen löscht nie etwas.
-- **Hell und dunkel**, Deutsch und Englisch. Bedienbar mit Finger, Stift, Maus und Tastatur.
+- **Hell und dunkel**, Deutsch und Englisch. Bedienbar mit Finger, Stift, Maus und Tastatur. Rechtsklick (oder langes Drücken) öffnet bei Buchungen, Kunden, Aufträgen, Produkten und Aufgaben ein Menü.
 - **Updates** direkt in der App: *Einstellungen → Über Conti → Nach Updates suchen*.
 
 ## Kommt bald
@@ -47,6 +47,7 @@ Unter [Releases](https://github.com/rawkhawk0663/conti/releases/latest) liegt di
 
 - **Windows 10/11:** `Conti-Setup.exe` herunterladen und starten. Meldet Windows „Der Computer wurde durch Windows geschützt“: *Weitere Informationen → Trotzdem ausführen*. Ohne Installation: `Conti-Windows.zip` entpacken und `Conti.exe` starten.
 - **Android:** `Conti-Android.apk` auf dem Handy herunterladen und öffnen. Android fragt, ob Apps aus dieser Quelle installiert werden dürfen.
+- **Android mit automatischen Updates:** In der App [Obtainium](https://github.com/ImranR98/Obtainium) „App hinzufügen“ wählen und `https://github.com/rawkhawk0663/conti` eintragen. Obtainium meldet und installiert jede neue Version.
 
 ## Deine Daten
 

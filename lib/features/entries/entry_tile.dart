@@ -146,7 +146,12 @@ Future<void> showEntryMenu(BuildContext context, Entry e, {Offset? at}) async {
 /// Löschen mit „Rückgängig“.
 Future<void> deleteWithUndo(BuildContext context, ContiState s, Entry e) async {
   final messenger = ScaffoldMessenger.of(context);
-  await s.deleteEntry(e);
+  try {
+    await s.deleteEntry(e);
+  } on YearClosedException catch (err) {
+    messenger.showSnackBar(SnackBar(content: Text(err.message)));
+    return;
+  }
   messenger.showSnackBar(
     SnackBar(
       content: Text(tr('Buchung gelöscht', 'Entry deleted')),

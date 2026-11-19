@@ -59,13 +59,14 @@ Future<void> shareFile(BuildContext context, String path, {String? subject, Stri
 /// Kopie der Datei an einem gewählten Ort speichern (Computer).
 Future<void> saveCopy(BuildContext context, String path) async {
   final messenger = ScaffoldMessenger.of(context);
+  final ext = p.extension(path).replaceFirst('.', '').toLowerCase();
   final loc = await getSaveLocation(
     suggestedName: p.basename(path),
-    acceptedTypeGroups: const [XTypeGroup(label: 'PDF', extensions: ['pdf'])],
+    acceptedTypeGroups: [XTypeGroup(label: ext.toUpperCase(), extensions: [ext])],
   );
   if (loc == null) return;
   try {
-    await File(path).copy(loc.path.toLowerCase().endsWith('.pdf') ? loc.path : '${loc.path}.pdf');
+    await File(path).copy(loc.path.toLowerCase().endsWith('.$ext') ? loc.path : '${loc.path}.$ext');
     messenger.showSnackBar(SnackBar(content: Text(tr('Gespeichert', 'Saved')), persist: false));
   } catch (e) {
     messenger.showSnackBar(SnackBar(content: Text(tr('Speichern ging nicht: $e', 'Saving failed: $e'))));

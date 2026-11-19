@@ -7,7 +7,7 @@ Der Bauplan liegt als Artifact „Conti Bauplan“ beim Besitzer. Pakete:
 2. **Dropbox-Sync** (fertig) auf Windows und Android, siehe „Abgleich“.
 3. **Kunden, Produkte, Aufträge, Aufgaben** (fertig), siehe „Kunden und Aufträge“.
 4. **Rechnungen** (fertig), siehe „Rechnungen“.
-5. **Jahresabschluss** für alle Kantone (Aufstellung Einnahmen, Ausgaben, Vermögen, Privatbezüge/-einlagen), zuerst Feld-Zuordnung für Luzern.
+5. **Jahresabschluss** (fertig), siehe „Jahresabschluss“. Feld-Zuordnung bisher nur Luzern.
 6. **MWST** (optional, ausgeschaltet): Feld `vat` an Buchungen, Produkten und Positionen ist schon da (Standard „none“).
 
 ## Grundsätze (nie brechen)
@@ -40,10 +40,11 @@ Datenordner `<ApplicationSupport>/Daten` (Windows `%APPDATA%\Conti\Conti\Daten`)
 ```
 conti.json                Markierung (Format conti-daten v1)
 geschaeft.json            Mein Geschäft (Format conti-geschaeft v1, jüngste Fassung gewinnt als Ganzes)
-konten.json, kategorien.json, kunden.json, produkte.json, auftraege.json, aufgaben.json, auftragsarten.json   ({format, version, items})
+konten.json, kategorien.json, kunden.json, produkte.json, auftraege.json, aufgaben.json, auftragsarten.json, anlagen.json, abschluesse.json   ({format, version, items})
 buchungen/<jahr>.json     Buchungen eines Jahres (conti-buchungen v1). Beim Verschieben in ein anderes Jahr beide Jahre speichern (`saveEntry(previousYear:)`), beim Laden gewinnt die jüngere Fassung.
 belege/<jahr>/<id>.<endung>   Belege
 rechnungen/<jahr>/<nummer>.pdf   gestellte Rechnungen und Zahlungserinnerungen (nie verändert)
+abschluesse/<jahr>/abschluss-<jahr>.pdf   Jahresabschlüsse (nie überschrieben)
 bilder/                   Logo, Unterschrift
 ```
 Gerätespezifisch (nicht abgeglichen): `<ApplicationSupport>/einstellungen.json` (Darstellung, Sprache, `setupDone`, letzte Sicherung, zuletzt gewähltes Konto, Dropbox, Erinnerungen an/aus und Uhrzeit), `Sicherungen/` (automatisch, 14 Stück), `fehler.log`, `update.log`.
@@ -79,6 +80,16 @@ Geschrieben wird immer über eine Zwischendatei (`JsonFile`).
 - Import: Aufträge der früheren App mit Rechnungsnummer gelten als verrechnet; liegt das alte Rechnungs-PDF auf dem Gerät (alter Pfad oder neben dem Belegordner), wird es nach `rechnungen/` kopiert.
 - Teilen über `share_plus` 13.3.1 (`lib/app/files.dart`: `openFile`, `shareFile`, `saveCopy`, `openPdfBytes`).
 
+## Jahresabschluss (Paket 5)
+- Rechnung in `lib/core/closing/year_report.dart` (`YearReport.compute`, reine Funktion, getestet in `test/closing_test.dart`): Erfolgsrechnung nach Zahlung (Ist), danach Abgrenzung mit offenen Kundenrechnungen (aus Aufträgen: `invoicedAt` ≤ Stichtag, nicht bezahlt) und offenen Lieferantenrechnungen (von Hand). Vermögen am 1.1. und 31.12. (Konten, Debitoren, Anlagen, − Kreditoren), Privatbezüge/-einlagen und **Kontrolle** (`difference` muss 0 sein; Buchungen ohne Konto oder vor dem Anfangsdatum eines Kontos erklären eine Differenz).
+- **Gruppen** (`ClosingGroup`, Feld `group` an der Kategorie, sonst von der Oberkategorie, sonst Vorschlag `ClosingGroups.suggest`): Einnahmen, andere Erträge, Waren/Material, Löhne, Miete, Fahrzeug, andere Kosten, **Privatbezug/Privateinlage**. Private Gruppen zählen nirgends als Einnahme/Ausgabe (`ContiState.businessAmount`). Feste Kategorien `cat-private-out`, `cat-private-in` (`ensurePrivateCategories`, wie die Auftragsarten). „Nicht in Auswertungen zählen“ gilt im Abschluss als Privatbezug/-einlage.
+- **Anschaffungen:** Schalter in der Buchung (nur Ausgabe ohne Aufteilen) schreibt `Entry.asset` (`AssetInfo`: Art, Methode, Satz; liest auch das Format der früheren App). Solche Buchungen sind keine Ausgabe, sondern laufen über `FixedAsset`/`Depreciation` (`depreciation.dart`): degressiv vom Restwert (Normalsätze ESTV Merkblatt A 1995: Mobiliar 25, Geräte/Instrumente 30, Computer 40, Fahrzeuge 40, Werkzeuge 45 %), linear halber Satz vom Kaufpreis, oder sofort; Restwert bleibt CHF 1, unter CHF 10 geht der Rest auf einmal. Anlagen ohne Buchung (vor Conti gekauft): `anlagen.json` (`Asset`, Restwert am 1.1. eines Jahres). Verkauft/ausgeschieden: `YearClosing.disposed` im Jahr des Verkaufs (die Buchung im alten Jahr bleibt unverändert, weil das Jahr gesperrt sein kann).
+- **Pro Jahr** (`abschluesse.json`, `YearClosing`, ID `year-<jahr>`): Fahrzeuge (Privatanteil 0,9 % des Kaufpreises pro Monat, mind. CHF 150), Korrekturen (`Adjustment`: Privatanteil in % einer Kategorie oder Betrag, privat bezahlte Kosten wie Arbeitszimmer, nicht gebuchte Einnahmen), Lieferantenrechnungen, abgehakte Kontostände, Abschluss (`closedAt`, Verlauf `history`), letztes PDF.
+- **Abschliessen** sperrt das Jahr: `saveEntry`/`deleteEntry`/`restoreEntry` werfen `YearClosedException` (auch beim Verschieben in ein gesperrtes Jahr), der Editor zeigt die Buchung nur an. Aufheben geht mit Bestätigung und bleibt im Verlauf.
+- **PDF** (`closing_pdf.dart`, Schrift wie die Rechnungen) in `abschluesse/<jahr>/abschluss-<jahr>.pdf`, nie überschrieben (`-2` …). **CSV** (`closing_csv.dart`): Strichpunkt, BOM, Beträge mit Punkt, eine Zeile pro Buchungsteil.
+- **Kantone** (`canton_forms.dart`): Luzern Formular S2 (S200, S204, S206/S208, S211–S214, S219, S220, S222, S230, S236–S238, S239, S240), S3 (S300–S302, S308, S309, S312 → Ziffer 430, S341, Bank-/Postkonten „G1“ ins Wertschriftenverzeichnis), Privat (S320, S322, S323, S328, S330, S331), Einkommen → Ziffer 110 (Haupterwerb) bzw. 114 (Nebenerwerb, `Business.mainOccupation`). Nummern aus der Wegleitung 2026; die Rückseite von S2 (S221–S246) steht dort nicht vollständig, darum der Hinweis zum Prüfen. Andere Kantone: nur die allgemeine Aufstellung.
+- Seite `features/closing/closing_screen.dart` (aus Einstellungen und der Karte „Steuern und Abschluss“ auf der Startseite). Die Karte zeigt die Rücklage für Steuern/AHV (`Business.taxReservePercent`, Standard 25 %) und im ersten Halbjahr den offenen Abschluss des Vorjahres.
+
 ## Import aus der früheren App
 `lib/core/import/legacy_import.dart`. Die Datei hat `entries`, `clients`, `products`, `orders`, `tasks`, `company`, `invoiceSettings`, `taskSettings`. Beträge dort in Franken (`double`), `expenseItems` mit einem Eintrag = Unterkategorie, mit mehreren = Aufteilung. Die alte App kennt keine Konten: Beim Import wählt man eines. Belege stehen nur als `storedFileName` (z. B. `2026/…pdf`) drin, die Dateien sucht der Import im gewählten Ordner (direkt oder nach Dateiname). Logo und Unterschrift sind Daten-URLs (SVG). Platzhalter `{deinName}` → `{name}`, `{invoiceNumber}` → `{rechnungsnummer}`. Strasse und Hausnummer werden getrennt (`splitStreet`).
 
@@ -87,12 +98,13 @@ Geschrieben wird immer über eine Zwischendatei (`JsonFile`).
 lib/
   app/        l10n, Theme (ContiColors), Updater, Fehlerprotokoll, Version
   core/       money, dates, swiss (IBAN, Kantone), device_settings, backup, conti_state (ContiScope)
-    model/    synced (mergeById), entry, account, category, business, crm (Client, Product, Order, Task)
+    model/    synced (mergeById), entry, account, category, business, crm (Client, Product, Order, Task), closing (Abschluss, Anlagen)
     store/    json_file, data_store
     import/   legacy_import
     sync/     cloud_auth, dropbox_api, sync_engine, sync_controller
     invoice/  swiss_qr, invoice_pdf, invoicing
-  features/   shell, overview, entries, clients, orders, invoices, products, tasks, settings, import, setup, sync
+    closing/  depreciation, year_report, canton_forms, closing_pdf, closing_csv
+  features/   shell, overview, entries, clients, orders, invoices, closing, products, tasks, settings, import, setup, sync
   widgets/    visuals
 ```
 

@@ -73,8 +73,8 @@ class _EntriesScreenState extends State<EntriesScreen> {
     for (final e in list) {
       groups.putIfAbsent((e.year, e.date.month), () => []).add(e);
     }
-    final income = list.where((e) => e.kind == EntryKind.income && !e.excludeFromReports).fold(0, (a, e) => a + e.amount);
-    final expenses = list.where((e) => e.kind == EntryKind.expense && !e.excludeFromReports).fold(0, (a, e) => a + e.amount);
+    final income = list.where((e) => e.kind == EntryKind.income).fold(0, (a, e) => a + s.businessAmount(e));
+    final expenses = list.where((e) => e.kind == EntryKind.expense).fold(0, (a, e) => a + s.businessAmount(e));
     final filtered = _kind != null || _accountId != null || _categoryId != null || _search.text.isNotEmpty;
 
     return Scaffold(
@@ -212,7 +212,8 @@ class _MonthHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sum = entries.where((e) => !e.excludeFromReports).fold(0, (a, e) => a + e.signedAmount);
+    final s = ContiScope.of(context);
+    final sum = entries.fold(0, (a, e) => a + (e.kind == EntryKind.income ? s.businessAmount(e) : -s.businessAmount(e)));
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
       child: Row(

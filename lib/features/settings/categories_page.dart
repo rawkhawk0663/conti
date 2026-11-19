@@ -4,6 +4,7 @@ import '../../app/l10n.dart';
 import '../../app/theme.dart';
 import '../../core/conti_state.dart';
 import '../../core/model/category.dart';
+import '../../core/model/closing.dart';
 import '../../core/model/synced.dart';
 import '../../widgets/visuals.dart';
 
@@ -61,6 +62,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
                               )
                             : Icon(Icons.subdirectory_arrow_right, size: 18, color: context.conti.muted),
                         title: Text(cat.name),
+                        subtitle: Text(
+                          s.groupOf(cat.id, income: cat.income).label,
+                          style: TextStyle(color: context.conti.muted, fontSize: 12.5),
+                        ),
                         onTap: () => _edit(context, cat),
                         trailing: depth == 0
                             ? IconButton(
@@ -109,6 +114,30 @@ class _CategoriesPageState extends State<CategoriesPage> {
                   ],
                   onChanged: s.categories.any((x) => x.parentId == c.id) ? null : (v) => setState(() => c.parentId = v),
                 ),
+                const SizedBox(height: 14),
+                DropdownButtonFormField<ClosingGroup?>(
+                  initialValue: c.group != null && c.group!.income == c.income ? c.group : null,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: tr('Im Jahresabschluss', 'In the annual accounts'),
+                    helperText: tr(
+                      'Wohin die Beträge in der Steuererklärung gehören.',
+                      'Where the amounts belong in the tax return.',
+                    ),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: null,
+                      child: Text(
+                        tr('Automatisch: ', 'Automatic: ') + _automatic(s, c).label,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    for (final g in ClosingGroup.forIncome(c.income))
+                      DropdownMenuItem(value: g, child: Text(g.label, overflow: TextOverflow.ellipsis)),
+                  ],
+                  onChanged: (v) => setState(() => c.group = v),
+                ),
                 if (error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
@@ -152,5 +181,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
       ),
     );
     if (ok == true) await s.saveCategory(c);
+  }
+
+  /// Was ohne eigene Angabe gilt: die Gruppe der Oberkategorie oder ein Vorschlag aus dem Namen.
+  ClosingGroup _automatic(ContiState s, Category c) {
+    final parent = s.category(c.parentId);
+    final g = parent?.group ?? ClosingGroups.suggest(parent ?? c);
+    return g.income == c.income ? g : (c.income ? ClosingGroup.revenue : ClosingGroup.other);
   }
 }

@@ -257,7 +257,12 @@ Future<void> recordPaymentFlow(BuildContext context, Order order) async {
     ),
   );
   if (ok != true) return;
-  await Invoicing.recordPayment(s, s.order(order.id) ?? order, date: date, accountId: accountId, amount: Money.parse(amount.text)!, categoryId: categoryId);
+  try {
+    await Invoicing.recordPayment(s, s.order(order.id) ?? order, date: date, accountId: accountId, amount: Money.parse(amount.text)!, categoryId: categoryId);
+  } on YearClosedException catch (e) {
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    return;
+  }
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(tr('Zahlung verbucht, Rechnung bezahlt.', 'Payment recorded, invoice paid.')), persist: false),

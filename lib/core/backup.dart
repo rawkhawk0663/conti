@@ -82,8 +82,8 @@ class Backup {
         throw const FormatException('Das ist keine Conti-Sicherung.');
       }
       final snap = await DataStore(out).load();
-      // Belege und Bilder, die fehlen, dazulegen (vorhandene nie überschreiben).
-      for (final sub in ['belege', 'bilder']) {
+      // Belege, Bilder und PDFs, die fehlen, dazulegen (vorhandene nie überschreiben).
+      for (final sub in ['belege', 'bilder', 'rechnungen', 'abschluesse']) {
         final dir = Directory(p.join(out, sub));
         if (!await dir.exists()) continue;
         await for (final f in dir.list(recursive: true)) {
@@ -104,6 +104,8 @@ class Backup {
         orders: snap.orders,
         tasks: snap.tasks,
         orderKinds: snap.orderKinds,
+        assets: snap.assets,
+        closings: snap.closings,
         business: snap.business.isEmpty ? null : snap.business,
       );
       return snap.entries.where((e) => !e.deleted).length;

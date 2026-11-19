@@ -7,7 +7,7 @@ Für Windows und Android · Open Source (GPL-3.0) · <a href="README.en.md">Engl
 
 ---
 
-Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständige: Einnahmen, Ausgaben, Belege und Konten an einem Ort, auf dem Computer und auf dem Handy. Später kommen Kundinnen und Kunden, Aufträge, Rechnungen mit Schweizer QR-Zahlteil und der Jahresabschluss für die Steuererklärung dazu.
+Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständige: Einnahmen, Ausgaben, Belege und Konten an einem Ort, auf dem Computer und auf dem Handy. Dazu Kundinnen und Kunden, Aufträge, Rechnungen mit Schweizer QR-Zahlteil und der Jahresabschluss für die Steuererklärung.
 
 ![Conti auf dem Surface, dunkel](bilder/surface_dunkel.png)
 
@@ -27,6 +27,10 @@ Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständi
 - **Abos** mit frei wählbarer Anzahl Lektionen: Lektionen abhaken, Conti zählt mit und erinnert, wenn das Abo aufgebraucht ist. Mit einem Knopf entsteht das nächste Abo.
 - **Rechnungen als PDF mit Schweizer QR-Zahlteil:** aus einem Auftrag mit einem Knopf. Logo, Absender, Empfänger, Positionen, Dankeszeile mit Unterschrift und Zahlteil mit Empfangsschein. Normale IBAN mit Mitteilung oder QR-IBAN mit QR-Referenz. Rechnungen werden aufbewahrt und nie verändert, lassen sich öffnen, per E-Mail oder WhatsApp senden und speichern.
 - **Zahlungen erfassen:** Die Einnahme wird gebucht, mit der Rechnung als Beleg, und der Auftrag steht auf „bezahlt“. Offene und überfällige Rechnungen erscheinen auf der Startseite, dazu eine Erinnerung am Tag nach der Frist und auf Knopfdruck eine **Zahlungserinnerung** als PDF.
+- **Jahresabschluss für die Steuererklärung:** Einnahmen und Ausgaben, Vermögen am 1. Januar und 31. Dezember, Privatbezüge und Privateinlagen, mit einer Kontrolle, ob alles aufgeht. Als PDF zum Beilegen und als Tabelle (CSV) für Excel oder eine Treuhänderin. Für **Luzern** stehen die Beträge gleich bei den Feldern der Formulare S2 und S3. Danach lässt sich das Jahr abschliessen, die Buchungen sind dann gesperrt.
+- **Abschreibungen:** Eine grössere Anschaffung (Instrument, Verstärker, Laptop) markierst du in der Buchung als „Anschaffung“. Conti schreibt sie jedes Jahr ab, nach den Sätzen der Steuerverwaltung.
+- **Privatanteile** für Auto (pauschal 0,9 % pro Monat), Handy oder Internet, dazu privat bezahlte Geschäftskosten wie ein Arbeitszimmer. Für Geld zwischen Geschäft und Privat gibt es die Kategorien „Privatbezug“ und „Privateinlage“.
+- **Für Steuern zurücklegen:** Die Startseite zeigt, wie viel du ungefähr zur Seite legen solltest (Prozentsatz einstellbar).
 - **Aufgaben** mit Frist und Farb-Ampel (gelb, orange, rot), auf der Startseite und in der Kundenkarte, dazu **Erinnerungen als Mitteilung** auf Android und Windows.
 - **Mein Geschäft:** Name, Adresse, IBAN (mit Prüfung, erkennt QR-IBAN), Logo, Unterschrift, Kanton. Jede Person richtet ihr eigenes Geschäft ein, nichts davon steht im Programm.
 - **Import** aus der früheren Buchhaltungs-App (Datei `.json`), mit Vorschau. Ein zweiter Import erzeugt nichts doppelt.
@@ -40,7 +44,8 @@ Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständi
 - [x] Abgleich über **Dropbox** zwischen Windows und Android
 - [x] **Kunden, Produkte und Aufträge** (Gig, Lektionen-Abo, Grafik-Auftrag …) und **Aufgaben** mit Fristen-Ampel
 - [x] **Rechnungen** als PDF mit **Schweizer QR-Zahlteil**, Zahlungen verbuchen, Zahlungserinnerungen
-- [ ] **Jahresabschluss** für die Steuererklärung (für alle Kantone, zuerst Luzern)
+- [x] **Jahresabschluss** für die Steuererklärung (für alle Kantone, Formularfelder zuerst für Luzern)
+- [ ] Formularfelder für **weitere Kantone**
 - [ ] **MWST**, falls man pflichtig wird (8,1 %, 2,6 %, 3,8 %, effektiv oder Saldosteuersatz)
 
 ## Installieren

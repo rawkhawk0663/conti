@@ -5,11 +5,14 @@ import 'package:path/path.dart' as p;
 
 import '../app/error_log.dart';
 import '../app/l10n.dart';
+import 'closing/depreciation.dart';
+import 'closing/year_report.dart';
 import 'dates.dart';
 import 'device_settings.dart';
 import 'model/account.dart';
 import 'model/business.dart';
 import 'model/category.dart';
+import 'model/closing.dart';
 import 'model/crm.dart';
 import 'model/entry.dart';
 import 'model/synced.dart';
@@ -37,6 +40,8 @@ class ContiState extends ChangeNotifier {
   List<Order> _orders = [];
   List<Task> _tasks = [];
   List<OrderKind> _orderKinds = [];
+  List<Asset> _assets = [];
+  List<YearClosing> _closings = [];
   bool dataInitialized = false;
 
   /// Wird nach jeder eigenen Änderung aufgerufen (der Abgleich startet dann bald).
@@ -68,8 +73,13 @@ class ContiState extends ChangeNotifier {
     _orders = s.orders;
     _tasks = s.tasks;
     _orderKinds = s.orderKinds;
+    _assets = s.assets;
+    _closings = s.closings;
     dataInitialized = s.initialized;
-    if (dataInitialized) await ensureOrderKinds(notify: false);
+    if (dataInitialized) {
+      await ensureOrderKinds(notify: false);
+      await ensurePrivateCategories();
+    }
     await _migrateOrderKinds();
     notifyListeners();
   }
@@ -88,6 +98,8 @@ class ContiState extends ChangeNotifier {
   List<Product> get products => _products.where((x) => !x.deleted).toList();
   List<Order> get orders => _orders.where((x) => !x.deleted).toList();
   List<Task> get tasks => _tasks.where((x) => !x.deleted).toList();
+  List<Asset> get assets => _assets.where((x) => !x.deleted).toList();
+  List<YearClosing> get closings => _closings.where((x) => !x.deleted).toList();
   List<OrderKind> get orderKinds =>
       (_orderKinds.where((k) => !k.deleted).toList()..sort((a, b) => a.order.compareTo(b.order)));
 
@@ -223,19 +235,40 @@ class ContiState extends ChangeNotifier {
 
   Iterable<Entry> _reportEntries(int year) => entries.where((e) => e.year == year && !e.excludeFromReports);
 
+  /// Gruppe einer Kategorie im Abschluss.
+  ClosingGroup groupOf(String? categoryId, {required bool income}) =>
+      ClosingGroups.resolve({for (final c in _categories) c.id: c}, categoryId, income: income);
+
+  /// Geschäftlicher Teil einer Buchung (ohne Privatbezüge und -einlagen,
+  /// ohne Buchungen, die nicht in Auswertungen zählen).
+  int businessAmount(Entry e) {
+    if (e.excludeFromReports || e.kind == EntryKind.transfer) return 0;
+    final income = e.kind == EntryKind.income;
+    var sum = 0;
+    e.amountsByCategory.forEach((id, amount) {
+      if (!groupOf(id, income: income).isPrivate) sum += amount;
+    });
+    return sum;
+  }
+
+  /// Ist die Buchung ganz privat (Privatbezug oder Privateinlage)?
+  bool isPrivateEntry(Entry e) => e.kind != EntryKind.transfer && businessAmount(e) == 0 && !e.excludeFromReports;
+
   int incomeOf(int year, {int? month}) => _reportEntries(year)
       .where((e) => e.kind == EntryKind.income && (month == null || e.date.month == month))
-      .fold(0, (s, e) => s + e.amount);
+      .fold(0, (s, e) => s + businessAmount(e));
 
   int expensesOf(int year, {int? month}) => _reportEntries(year)
       .where((e) => e.kind == EntryKind.expense && (month == null || e.date.month == month))
-      .fold(0, (s, e) => s + e.amount);
+      .fold(0, (s, e) => s + businessAmount(e));
 
   /// Summen pro Oberkategorie (Unterkategorien zählen zur Oberkategorie).
+  /// Privatbezüge und -einlagen zählen nicht.
   Map<String, int> totalsByTopCategory(int year, {required bool income}) {
     final out = <String, int>{};
     for (final e in _reportEntries(year).where((e) => e.kind == (income ? EntryKind.income : EntryKind.expense))) {
       e.amountsByCategory.forEach((catId, amount) {
+        if (groupOf(catId, income: income).isPrivate) return;
         final c = category(catId);
         final top = c?.parentId != null && category(c!.parentId) != null ? c.parentId! : (c?.id ?? '');
         out[top] = (out[top] ?? 0) + amount;
@@ -244,10 +277,109 @@ class ContiState extends ChangeNotifier {
     return out;
   }
 
+  // ---------- Jahresabschluss ----------
+
+  /// Angaben zum Abschluss eines Jahres (leer, falls es noch keine gibt).
+  YearClosing closingOf(int year) =>
+      _closings.where((c) => c.year == year && !c.deleted).firstOrNull ?? YearClosing(year: year);
+
+  bool isYearClosed(int year) => closingOf(year).closed;
+
+  /// Verkaufte oder ausgeschiedene Anlagen: ID → Jahr (das früheste gilt).
+  Map<String, int> get disposals {
+    final out = <String, int>{};
+    for (final c in closings) {
+      for (final id in c.disposed) {
+        final cur = out[id];
+        if (cur == null || c.year < cur) out[id] = c.year;
+      }
+    }
+    return out;
+  }
+
+  /// Anlagen mit Abschreibungen: aus Buchungen und ohne Buchung.
+  List<FixedAsset> get fixedAssets {
+    final sold = disposals;
+    final list = [
+      for (final e in entries)
+        if (e.kind == EntryKind.expense && !e.excludeFromReports)
+          if (AssetInfo.fromJson(e.asset) case final info?) FixedAsset.fromEntry(e, info),
+      for (final a in assets) FixedAsset.fromAsset(a),
+    ];
+    for (final f in list) {
+      if (sold[f.id] case final y?) f.info.soldYear = y;
+    }
+    return list;
+  }
+
+  /// Der Abschluss eines Jahres, aus allen Daten berechnet.
+  YearReport reportOf(int year) => YearReport.compute(
+    year: year,
+    entries: entries,
+    accounts: accounts,
+    categories: categories,
+    orders: orders,
+    clients: clients,
+    assets: assets,
+    closing: closingOf(year),
+    previous: closingOf(year - 1),
+    disposals: disposals,
+  );
+
+  Future<void> saveClosing(YearClosing c) async {
+    c.touch();
+    _closings.removeWhere((x) => x.id == c.id);
+    _closings.add(c);
+    _closings = await store.saveClosings(_closings);
+    _changed();
+  }
+
+  /// Jahr abschliessen: danach lassen sich die Buchungen dieses Jahres nicht
+  /// mehr ändern.
+  Future<void> closeYear(int year) async {
+    final c = closingOf(year).copy();
+    final now = DateTime.now().toUtc();
+    c.closedAt = now;
+    c.history.add(ClosingEvent(action: 'closed', at: now));
+    await saveClosing(c);
+  }
+
+  /// Abschluss aufheben (bleibt im Verlauf sichtbar).
+  Future<void> reopenYear(int year) async {
+    final c = closingOf(year).copy();
+    c.closedAt = null;
+    c.history.add(ClosingEvent(action: 'reopened', at: DateTime.now().toUtc()));
+    await saveClosing(c);
+  }
+
+  Future<void> saveAsset(Asset a) async {
+    a.touch();
+    _assets.removeWhere((x) => x.id == a.id);
+    _assets.add(a);
+    _assets = await store.saveAssets(_assets);
+    _changed();
+  }
+
+  Future<void> deleteAsset(Asset a) => saveAsset(a.copy()..deleted = true);
+
+  /// Kategorien „Privatbezug“ und „Privateinlage“ anlegen, falls es sie noch
+  /// nie gab (gelöschte kommen nicht zurück).
+  Future<void> ensurePrivateCategories() async {
+    if (_categories.any((c) => c.id == DefaultCategories.privateOutId || c.id == DefaultCategories.privateInId)) return;
+    try {
+      _categories = await store.saveCategories(mergeById(_categories, DefaultCategories.buildPrivate(english: L10n.isEnglish)));
+    } catch (e, st) {
+      ErrorLog.record(e, st, where: 'Privat-Kategorien anlegen');
+    }
+  }
+
   // ---------- Ändern ----------
 
   /// Buchung neu anlegen oder ändern.
   Future<void> saveEntry(Entry e, {int? previousYear}) async {
+    if (isYearClosed(e.year) || (previousYear != null && isYearClosed(previousYear))) {
+      throw YearClosedException(isYearClosed(e.year) ? e.year : previousYear!);
+    }
     e.touch();
     _entries.removeWhere((x) => x.id == e.id);
     _entries.add(e);
@@ -259,6 +391,7 @@ class ContiState extends ChangeNotifier {
   Future<void> deleteEntry(Entry e) async {
     final x = entry(e.id);
     if (x == null) return;
+    if (isYearClosed(x.year)) throw YearClosedException(x.year);
     x.deleted = true;
     x.touch();
     await _persistEntries({x.year});
@@ -267,6 +400,7 @@ class ContiState extends ChangeNotifier {
   Future<void> restoreEntry(Entry e) async {
     final x = entry(e.id);
     if (x == null) return;
+    if (isYearClosed(x.year)) throw YearClosedException(x.year);
     x.deleted = false;
     x.touch();
     await _persistEntries({x.year});
@@ -398,6 +532,8 @@ class ContiState extends ChangeNotifier {
     List<Order> orders = const [],
     List<Task> tasks = const [],
     List<OrderKind> orderKinds = const [],
+    List<Asset> assets = const [],
+    List<YearClosing> closings = const [],
     Business? business,
   }) async {
     if (entries.isNotEmpty) {
@@ -411,6 +547,8 @@ class ContiState extends ChangeNotifier {
     if (orders.isNotEmpty) _orders = await store.saveOrders(mergeById(_orders, orders));
     if (tasks.isNotEmpty) _tasks = await store.saveTasks(mergeById(_tasks, tasks));
     if (orderKinds.isNotEmpty) _orderKinds = await store.saveOrderKinds(mergeById(_orderKinds, orderKinds));
+    if (assets.isNotEmpty) _assets = await store.saveAssets(mergeById(_assets, assets));
+    if (closings.isNotEmpty) _closings = await store.saveClosings(mergeById(_closings, closings));
     if (orders.isNotEmpty) {
       await ensureOrderKinds(notify: false);
       await _migrateOrderKinds();
@@ -425,6 +563,7 @@ class ContiState extends ChangeNotifier {
   Future<void> finishSetup() async {
     await store.markInitialized();
     await ensureOrderKinds(notify: false);
+    await ensurePrivateCategories();
     await device.setSetupDone();
     dataInitialized = true;
     _changed();
@@ -479,4 +618,19 @@ class ContiScope extends InheritedNotifier<ContiState> {
 
   /// Ohne Abhängigkeit (für Knöpfe, die nur etwas auslösen).
   static ContiState read(BuildContext context) => context.getInheritedWidgetOfExactType<ContiScope>()!.notifier!;
+}
+
+/// Buchung in einem abgeschlossenen Jahr: lässt sich nicht mehr ändern.
+class YearClosedException implements Exception {
+  YearClosedException(this.year);
+
+  final int year;
+
+  String get message => tr(
+    'Das Jahr $year ist abgeschlossen. Erfasse eine Korrektur im laufenden Jahr.',
+    'The year $year is closed. Record a correction in the current year.',
+  );
+
+  @override
+  String toString() => message;
 }

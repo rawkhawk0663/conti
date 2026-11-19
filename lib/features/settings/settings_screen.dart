@@ -6,6 +6,7 @@ import '../../app/version.dart';
 import '../../core/conti_state.dart';
 import '../../core/sync/sync_controller.dart';
 import '../sync/sync_page.dart';
+import '../closing/closing_screen.dart';
 import 'about_page.dart';
 import 'accounts_page.dart';
 import 'business_page.dart';
@@ -70,6 +71,13 @@ class SettingsScreen extends StatelessWidget {
                       tr('Kategorien', 'Categories'),
                       tr('${s.categories.length} Kategorien', '${s.categories.length} categories'),
                       const CategoriesPage(),
+                    ),
+                    tile(
+                      Icons.fact_check_outlined,
+                      c.pink,
+                      tr('Jahresabschluss', 'Annual accounts'),
+                      tr('Abschreibungen, Privatanteile, PDF für die Steuern', 'Depreciation, private shares, PDF for taxes'),
+                      const ClosingScreen(),
                     ),
                     tile(
                       Icons.request_quote_outlined,

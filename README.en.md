@@ -7,7 +7,7 @@ For Windows and Android · Open source (GPL-3.0) · <a href="README.md">Deutsch<
 
 ---
 
-Conti is a simple cash book for sole traders and freelancers: income, expenses, receipts and accounts in one place, on your computer and on your phone. Clients, orders, invoices with the Swiss QR payment part and the year-end report for your tax return come next.
+Conti is a simple cash book for sole traders and freelancers: income, expenses, receipts and accounts in one place, on your computer and on your phone. Plus clients, orders, invoices with the Swiss QR payment part and the year-end report for your tax return.
 
 ![Conti on a Surface, dark mode](bilder/surface_dunkel.png)
 
@@ -27,6 +27,10 @@ Conti is a simple cash book for sole traders and freelancers: income, expenses, 
 - **Lesson packs** with any number of lessons: tick off lessons, Conti counts and reminds you when the pack is used up. One button creates the next pack.
 - **Invoices as PDF with the Swiss QR payment part:** from an order with one button. Logo, sender, recipient, items, closing note with signature and payment part with receipt. Regular IBAN with a message or QR-IBAN with a QR reference. Invoices are kept and never changed, and can be opened, sent by email or WhatsApp, and saved.
 - **Record payments:** the income is booked with the invoice as receipt, and the order is set to “paid”. Open and overdue invoices appear on the home page, with a reminder the day after the due date and a **payment reminder** PDF at the push of a button.
+- **Year-end report for the tax return:** income and expenses, assets on 1 January and 31 December, private withdrawals and deposits, with a check that everything adds up. As a PDF to attach and as a table (CSV) for Excel or an accountant. For **Lucerne** the amounts are listed next to the fields of forms S2 and S3. Afterwards the year can be closed and its entries are locked.
+- **Depreciation:** mark a larger purchase (instrument, amplifier, laptop) as an “acquisition” in the entry. Conti depreciates it every year using the tax administration’s rates.
+- **Private shares** for a car (flat 0.9 % per month), phone or internet, plus business costs paid privately such as a home office. For money between business and private there are the categories “Private withdrawal” and “Private deposit”.
+- **Set aside for taxes:** the home page shows roughly how much to put aside (percentage adjustable).
 - **Tasks** with a deadline and colours (yellow, orange, red), on the home page and in the client card, plus **reminder notifications** on Android and Windows.
 - **My business:** name, address, IBAN (validated, recognises QR-IBANs), logo, signature, canton. Everyone sets up their own business, none of it is built into the program.
 - **Import** from the previous bookkeeping app (`.json` file), with a preview. Importing twice creates no duplicates.
@@ -40,7 +44,8 @@ Conti is a simple cash book for sole traders and freelancers: income, expenses, 
 - [x] **Dropbox** sync between Windows and Android
 - [x] **Clients, products and orders** (gig, lesson pack, design job …) and **tasks** with deadline colours
 - [x] **Invoices** as PDF with the **Swiss QR payment part**, recording payments, reminders
-- [ ] **Year-end report** for the tax return (all cantons, Lucerne first)
+- [x] **Year-end report** for the tax return (all cantons, form fields for Lucerne first)
+- [ ] Form fields for **more cantons**
 - [ ] **VAT** in case you become liable (8.1 %, 2.6 %, 3.8 %, effective or net tax rate method)
 
 ## Install

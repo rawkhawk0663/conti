@@ -19,6 +19,8 @@ class Business implements Synced {
     this.bankName = '',
     this.bic = '',
     this.canton = '',
+    this.mainOccupation = true,
+    this.taxReservePercent = 25,
     this.vatLiable = false,
     this.vatNumber = '',
     this.logoFile = '',
@@ -53,6 +55,12 @@ class Business implements Synced {
 
   /// Kantonskürzel, z. B. „LU“ (für den Jahresabschluss).
   String canton;
+
+  /// Haupterwerb (sonst Nebenerwerb). Bestimmt das Feld in der Steuererklärung.
+  bool mainOccupation;
+
+  /// Für die Startseite: so viel Prozent vom Gewinn für Steuern und AHV zurücklegen.
+  int taxReservePercent;
   bool vatLiable;
   String vatNumber;
 
@@ -91,6 +99,8 @@ class Business implements Synced {
     'bankName': bankName,
     'bic': bic,
     'canton': canton,
+    'mainOccupation': mainOccupation,
+    'taxReservePercent': taxReservePercent,
     'vatLiable': vatLiable,
     'vatNumber': vatNumber,
     'logoFile': logoFile,
@@ -115,6 +125,8 @@ class Business implements Synced {
     bankName: j.str('bankName'),
     bic: j.str('bic'),
     canton: j.str('canton'),
+    mainOccupation: j.flag('mainOccupation', true),
+    taxReservePercent: j.integer('taxReservePercent', 25),
     vatLiable: j.flag('vatLiable'),
     vatNumber: j.str('vatNumber'),
     logoFile: j.str('logoFile'),

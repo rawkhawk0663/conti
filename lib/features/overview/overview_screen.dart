@@ -14,6 +14,7 @@ import '../orders/order_editor.dart';
 import '../orders/order_widgets.dart';
 import '../../core/model/crm.dart';
 import '../tasks/tasks.dart';
+import '../closing/closing_screen.dart';
 
 /// Startseite: Gewinn des Jahres, Konten, Monate, letzte Buchungen.
 class OverviewScreen extends StatefulWidget {
@@ -50,6 +51,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
       _RecentCard(onShowAll: widget.onShowEntries),
       const _TasksCard(),
       const _InvoicesCard(),
+      _ClosingCard(year: year),
     ];
 
     return Scaffold(
@@ -89,7 +91,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
               itemCount: cards.length,
               separatorBuilder: (_, _) => const SizedBox(height: 14),
               // Handy: Aufgaben gleich nach dem Gewinn.
-              itemBuilder: (_, i) => cards[const [0, 6, 5, 1, 2, 3, 4][i]],
+              itemBuilder: (_, i) => cards[const [0, 7, 6, 5, 1, 2, 3, 4][i]],
             );
           }
           // Zwei Spalten: links die Zahlen, rechts Konten und Letzte Buchungen.
@@ -103,6 +105,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   child: Column(
                     children: [
                       cards[0],
+                      const SizedBox(height: 14),
+                      cards[7],
                       const SizedBox(height: 14),
                       cards[2],
                       const SizedBox(height: 14),
@@ -595,3 +599,109 @@ class _InvoicesCard extends StatelessWidget {
 /// Neue Buchung mit voreingestellter Art (für Schnellknöpfe).
 Future<void> newEntryOf(BuildContext context, EntryKind kind) =>
     openEntryEditor(context, kind: kind);
+
+/// Jahresabschluss: was für Steuern zurückzulegen ist, und der Weg zum Abschluss.
+class _ClosingCard extends StatelessWidget {
+  const _ClosingCard({required this.year});
+  final int year;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = ContiScope.of(context);
+    final c = context.conti;
+    final today = Day.today();
+    final prev = today.year - 1;
+    // In der ersten Jahreshälfte ans Vorjahr erinnern, solange es offen ist.
+    final remindPrev = year == today.year && today.month <= 6 && s.years.contains(prev) && !s.isYearClosed(prev);
+    final r = s.reportOf(year);
+    final percent = s.business.taxReservePercent;
+    final reserve = r.businessIncome <= 0 ? 0 : (r.businessIncome * percent / 100).round();
+    final closed = s.isYearClosed(year);
+    return SectionCard(
+      title: tr('Steuern und Abschluss', 'Taxes and accounts'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (remindPrev) ...[
+            Row(
+              children: [
+                Icon(Icons.event_note_outlined, color: c.sky[1]),
+                const SizedBox(width: 10),
+                Expanded(child: Text(tr('Der Abschluss $prev ist noch offen.', 'The accounts for $prev are still open.'))),
+                TextButton(onPressed: () => openClosingScreen(context, year: prev), child: Text(tr('Öffnen', 'Open'))),
+              ],
+            ),
+            const Divider(height: 20),
+          ],
+          if (!closed) ...[
+            CapsLabel(tr('Für Steuern und AHV zurücklegen', 'Set aside for taxes and AHV')),
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(child: BigNumber(Money.format(reserve), size: 30)),
+                TextButton(onPressed: () => _editPercent(context, s), child: Text('$percent %')),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              tr(
+                'Ungefähr $percent % vom Einkommen ${year == today.year ? 'bis heute' : year} (${Money.format(r.businessIncome)}). Eine Faustregel, keine Steuerrechnung.',
+                'About $percent% of the income ${year == today.year ? 'so far' : 'in $year'} (${Money.format(r.businessIncome)}). A rule of thumb, not a tax calculation.',
+              ),
+              style: TextStyle(color: c.muted, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+          ],
+          Row(
+            children: [
+              Icon(closed ? Icons.lock : Icons.fact_check_outlined, color: closed ? c.plus : c.muted, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  closed ? tr('Jahr $year abgeschlossen', 'Year $year closed') : tr('Jahresabschluss $year', 'Annual accounts $year'),
+                ),
+              ),
+              TextButton(onPressed: () => openClosingScreen(context, year: year), child: Text(tr('Öffnen', 'Open'))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editPercent(BuildContext context, ContiState s) async {
+    var v = s.business.taxReservePercent.toDouble();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(tr('Wie viel zurücklegen?', 'How much to set aside?')),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tr(
+                    'Selbständige zahlen Einkommenssteuern und AHV selbst. Viele legen 20 bis 30 % vom Gewinn zur Seite. Die genaue Höhe hängt von Kanton, Gemeinde und Familie ab.',
+                    'As a self-employed person you pay income tax and AHV yourself. Many set aside 20 to 30% of the profit. The exact amount depends on canton, municipality and family.',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text('${v.round()} %', style: Theme.of(context).textTheme.headlineSmall),
+                Slider(value: v, min: 5, max: 50, divisions: 45, onChanged: (x) => setState(() => v = x)),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(tr('Abbrechen', 'Cancel'))),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(tr('Sichern', 'Save'))),
+          ],
+        ),
+      ),
+    );
+    if (ok == true) await s.saveBusiness(s.business.copy()..taxReservePercent = v.round());
+  }
+}

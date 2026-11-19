@@ -5,6 +5,8 @@ import 'package:conti/core/conti_state.dart';
 import 'package:conti/core/model/account.dart';
 import 'package:conti/core/model/category.dart';
 import 'package:conti/core/model/entry.dart';
+import 'package:conti/features/closing/closing_screen.dart';
+import 'package:conti/features/entries/entry_editor.dart';
 import 'package:conti/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -79,6 +81,38 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(find.text('Neue Buchung'), findsNothing);
+    await tester.runAsync(() => dir.delete(recursive: true));
+  });
+  testWidgets('Jahresabschluss: Seite zeigt Zahlen, abgeschlossenes Jahr sperrt die Buchung', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final dir = await tester.runAsync(() => Directory.systemTemp.createTemp('conti-close-'));
+    final s = ContiState(dir!.path);
+    final last = DateTime.now().year - 1;
+    await tester.runAsync(() async {
+      await s.load();
+      await s.mergeIn(categories: DefaultCategories.build(english: false));
+      await s.saveAccount(Account(id: 'bank', name: 'Testbank', openingDate: DateTime(last, 1, 1)));
+      await s.saveEntry(Entry(id: 'a', date: DateTime(last, 5, 1), kind: EntryKind.income, amount: 80000, text: 'Konzert', accountId: 'bank', categoryId: 'cat-in-gigs'));
+      await s.finishSetup();
+      await s.closeYear(last);
+    });
+    L10n.language.value = AppLanguage.de;
+    await tester.pumpWidget(ContiApp(state: s));
+    await tester.pumpAndSettle();
+    final nav = tester.state<NavigatorState>(find.byType(Navigator).first);
+    nav.push(MaterialPageRoute<void>(builder: (_) => ClosingScreen(year: last)));
+    await tester.pumpAndSettle();
+    expect(find.text('Jahresabschluss'), findsOneWidget);
+    expect(find.text('800.00'), findsWidgets);
+    expect(find.text('Abschluss aufheben'), findsOneWidget);
+    nav.pop();
+    await tester.pumpAndSettle();
+    nav.push(MaterialPageRoute<void>(builder: (_) => EntryEditor(entry: s.entry('a'), isNew: false)));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ist abgeschlossen'), findsOneWidget);
+    expect(find.text('Sichern'), findsNothing);
     await tester.runAsync(() => dir.delete(recursive: true));
   });
 }

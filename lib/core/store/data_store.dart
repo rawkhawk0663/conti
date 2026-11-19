@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import '../model/account.dart';
 import '../model/business.dart';
 import '../model/category.dart';
+import '../model/closing.dart';
 import '../model/crm.dart';
 import '../model/entry.dart';
 import '../model/synced.dart';
@@ -23,6 +24,8 @@ class DataSnapshot {
     required this.orders,
     required this.tasks,
     required this.orderKinds,
+    required this.assets,
+    required this.closings,
     required this.initialized,
   });
 
@@ -35,6 +38,8 @@ class DataSnapshot {
   List<Order> orders;
   List<Task> tasks;
   List<OrderKind> orderKinds;
+  List<Asset> assets;
+  List<YearClosing> closings;
 
   /// Gibt es die Markierungsdatei (der Ordner wurde schon einmal eingerichtet)?
   bool initialized;
@@ -54,6 +59,8 @@ class DataSnapshot {
 /// geschaeft.json          Mein Geschäft
 /// konten.json, kategorien.json, kunden.json, produkte.json,
 /// auftraege.json, aufgaben.json, auftragsarten.json
+/// anlagen.json            Anlagen ohne Buchung (Abschreibungen)
+/// abschluesse.json        Jahresabschlüsse (ein Eintrag pro Jahr)
 /// buchungen/<jahr>.json   Buchungen eines Jahres
 /// belege/<jahr>/<id>.<endung>   Belege (werden nie verändert)
 /// bilder/                 Logo, Unterschrift
@@ -98,6 +105,8 @@ class DataStore {
       orders: await _loadList('auftraege.json', Order.fromJson),
       tasks: await _loadList('aufgaben.json', Task.fromJson),
       orderKinds: await _loadList('auftragsarten.json', OrderKind.fromJson),
+      assets: await _loadList('anlagen.json', Asset.fromJson),
+      closings: await _loadList('abschluesse.json', YearClosing.fromJson),
       initialized: initialized,
     );
   }
@@ -156,6 +165,9 @@ class DataStore {
   Future<List<Task>> saveTasks(List<Task> x) => saveList('aufgaben.json', 'conti-aufgaben', x, Task.fromJson);
   Future<List<OrderKind>> saveOrderKinds(List<OrderKind> x) =>
       saveList('auftragsarten.json', 'conti-auftragsarten', x, OrderKind.fromJson);
+  Future<List<Asset>> saveAssets(List<Asset> x) => saveList('anlagen.json', 'conti-anlagen', x, Asset.fromJson);
+  Future<List<YearClosing>> saveClosings(List<YearClosing> x) =>
+      saveList('abschluesse.json', 'conti-abschluesse', x, YearClosing.fromJson);
 
   /// Buchungen der Jahre [years] speichern (jedes Jahr eine Datei).
   /// Verschiebt man eine Buchung in ein anderes Jahr, müssen beide Jahre

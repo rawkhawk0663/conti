@@ -70,7 +70,9 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
-      - run: flutter build windows --release --build-name=${{ env.VERSION_PREFIX }}.${{ github.run_number }} --build-number=${{ github.run_number }} --dart-define=CONTI_VERSION=v${{ env.VERSION_PREFIX }}.${{ github.run_number }}
+      # Schlüssel der Dropbox-App (Geheimnis DROPBOX_APP_KEY). Fehlt er, ist
+      # der Abgleich in dieser Version ausgegraut.
+      - run: flutter build windows --release --build-name=${{ env.VERSION_PREFIX }}.${{ github.run_number }} --build-number=${{ github.run_number }} --dart-define=CONTI_VERSION=v${{ env.VERSION_PREFIX }}.${{ github.run_number }} --dart-define=DROPBOX_APP_KEY=${{ secrets.DROPBOX_APP_KEY }}
       - name: ZIP erstellen
         shell: pwsh
         run: |
@@ -127,9 +129,10 @@ jobs:
         env:
           CONTI_KEYSTORE: ${{ secrets.CONTI_KEYSTORE }}
           CONTI_KEYSTORE_PASSWORD: ${{ secrets.CONTI_KEYSTORE_PASSWORD }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
         run: |
           if [ -z "$CONTI_KEYSTORE" ]; then echo "::warning::Kein Signier-Schlüssel hinterlegt – Test-Schlüssel wird verwendet."; fi
-          ARGS="--release --build-name=${{ env.VERSION_PREFIX }}.${{ github.run_number }} --build-number=${{ github.run_number }} --dart-define=CONTI_VERSION=v${{ env.VERSION_PREFIX }}.${{ github.run_number }}"
+          ARGS="--release --build-name=${{ env.VERSION_PREFIX }}.${{ github.run_number }} --build-number=${{ github.run_number }} --dart-define=CONTI_VERSION=v${{ env.VERSION_PREFIX }}.${{ github.run_number }} --dart-define=DROPBOX_APP_KEY=$DROPBOX_APP_KEY"
           flutter build apk $ARGS || (echo "Zweiter Versuch …" && sleep 30 && flutter build apk $ARGS)
       - run: cp build/app/outputs/flutter-apk/app-release.apk Conti-Android.apk
       - name: In den Entwurf hochladen

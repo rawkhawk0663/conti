@@ -9,6 +9,7 @@ import '../../core/model/synced.dart';
 import '../../widgets/visuals.dart';
 import '../import/import_screen.dart';
 import '../settings/business_page.dart';
+import '../sync/sync_page.dart';
 
 /// Einrichtung beim ersten Start: Geschäft, Konten, Kanton. Oder gleich die
 /// Daten aus der früheren App übernehmen.
@@ -292,11 +293,19 @@ class _SetupScreenState extends State<SetupScreen> {
           tr('Buchungen, Kunden, Belege und Geschäftsangaben aus der .json-Datei.', 'Entries, clients, receipts and business details from the .json file.'),
           _startImport,
         ),
+        const SizedBox(height: 12),
+        choice(
+          Icons.cloud_sync_outlined,
+          c.sky,
+          tr('Schon auf einem anderen Gerät eingerichtet', 'Already set up on another device'),
+          tr('Mit Dropbox verbinden und alle Daten holen.', 'Connect to Dropbox and fetch all your data.'),
+          () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SyncPage(join: true))),
+        ),
         const SizedBox(height: 18),
         Text(
           tr(
-            'Alles bleibt auf deinen Geräten. Conti hat kein Konto und keinen Server.',
-            'Everything stays on your devices. Conti has no account and no server.',
+            'Alles bleibt auf deinen Geräten und in deiner eigenen Dropbox. Conti hat kein Konto und keinen Server.',
+            'Everything stays on your devices and in your own Dropbox. Conti has no account and no server.',
           ),
           textAlign: TextAlign.center,
           style: TextStyle(color: c.muted, fontSize: 13),

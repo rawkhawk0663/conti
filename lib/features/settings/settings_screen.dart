@@ -4,6 +4,8 @@ import '../../app/l10n.dart';
 import '../../app/theme.dart';
 import '../../app/version.dart';
 import '../../core/conti_state.dart';
+import '../../core/sync/sync_controller.dart';
+import '../sync/sync_page.dart';
 import 'about_page.dart';
 import 'accounts_page.dart';
 import 'business_page.dart';
@@ -34,6 +36,7 @@ class SettingsScreen extends StatelessWidget {
     );
 
     final b = s.business;
+    final sync = SyncScope.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(tr('Einstellungen', 'Settings'))),
       body: Center(
@@ -75,6 +78,17 @@ class SettingsScreen extends StatelessWidget {
               Card(
                 child: Column(
                   children: [
+                    tile(
+                      Icons.cloud_sync_outlined,
+                      c.sky,
+                      tr('Abgleich mit Dropbox', 'Sync with Dropbox'),
+                      !sync.available
+                          ? tr('In dieser Version nicht eingerichtet', 'Not set up in this version')
+                          : sync.connected
+                          ? (sync.account ?? tr('Verbunden', 'Connected'))
+                          : tr('Nicht verbunden', 'Not connected'),
+                      const SyncPage(),
+                    ),
                     tile(
                       Icons.inventory_2_outlined,
                       c.sky,

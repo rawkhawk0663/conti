@@ -23,13 +23,14 @@ Conti is a simple cash book for sole traders and freelancers: income, expenses, 
 - **Search and filter** by year, type, account, category and text.
 - **My business:** name, address, IBAN (validated, recognises QR-IBANs), logo, signature, canton. Everyone sets up their own business, none of it is built into the program.
 - **Import** from the previous bookkeeping app (`.json` file), with a preview. Importing twice creates no duplicates.
+- **Sync via Dropbox** between Windows and Android: at start-up, every two minutes and shortly after every change. What two devices record offline is merged. The data lives in your Dropbox in the “Apps” folder.
 - **Backups:** automatically once a day, plus by hand as a ZIP file. Restoring never deletes anything.
 - **Light and dark**, German and English. Works with finger, pen, mouse and keyboard.
 - **Updates** right in the app: *Settings → About Conti → Check for updates*.
 
 ## Coming soon
 
-- [ ] **Dropbox** sync between Windows and Android
+- [x] **Dropbox** sync between Windows and Android
 - [ ] **Clients, products and orders** (gig, lesson pack, design job …) and **tasks** with deadline colours
 - [ ] **Invoices** as PDF with the **Swiss QR payment part**, recording payments, reminders
 - [ ] **Year-end report** for the tax return (all cantons, Lucerne first)
@@ -44,7 +45,7 @@ The latest version is under [Releases](https://github.com/rawkhawk0663/conti/rel
 
 ## Your data
 
-Conti has no account and no server. Everything stays on your devices (on Windows in `%APPDATA%\Conti\Conti\Daten`) and later in your own Dropbox. Deleted items are kept as a marker and can be restored, because bookkeeping records must be kept for 10 years in Switzerland.
+Conti has no account and no server. Everything stays on your devices (on Windows in `%APPDATA%\Conti\Conti\Daten`) and, if you connect it, in your own Dropbox. Deleted items are kept as a marker and can be restored, because bookkeeping records must be kept for 10 years in Switzerland.
 
 ## Licence
 

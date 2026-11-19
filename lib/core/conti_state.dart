@@ -38,6 +38,14 @@ class ContiState extends ChangeNotifier {
   List<Task> _tasks = [];
   bool dataInitialized = false;
 
+  /// Wird nach jeder eigenen Änderung aufgerufen (der Abgleich startet dann bald).
+  VoidCallback? onLocalChange;
+
+  void _changed() {
+    notifyListeners();
+    onLocalChange?.call();
+  }
+
   Future<void> load() async {
     await device.load();
     L10n.language.value = device.language ?? AppLanguage.system;
@@ -189,7 +197,7 @@ class ContiState extends ChangeNotifier {
       ErrorLog.record(err, st, where: 'Buchungen speichern');
       rethrow;
     } finally {
-      notifyListeners();
+      _changed();
     }
   }
 
@@ -198,7 +206,7 @@ class ContiState extends ChangeNotifier {
     _accounts.removeWhere((x) => x.id == a.id);
     _accounts.add(a);
     _accounts = await store.saveAccounts(_accounts);
-    notifyListeners();
+    _changed();
   }
 
   /// Konto löschen geht nur ohne Buchungen, sonst wird es archiviert.
@@ -214,7 +222,7 @@ class ContiState extends ChangeNotifier {
     _categories.removeWhere((x) => x.id == c.id);
     _categories.add(c);
     _categories = await store.saveCategories(_categories);
-    notifyListeners();
+    _changed();
   }
 
   bool categoryInUse(String id) =>
@@ -229,7 +237,7 @@ class ContiState extends ChangeNotifier {
   Future<void> saveBusiness(Business b) async {
     b.touch();
     business = await store.saveBusiness(b);
-    notifyListeners();
+    _changed();
   }
 
   /// Mehrere Sammlungen auf einmal übernehmen (Import, Sicherung einspielen).
@@ -257,7 +265,7 @@ class ContiState extends ChangeNotifier {
     if (business != null) {
       if (business.updatedAt.isAfter(this.business.updatedAt)) this.business = await store.saveBusiness(business);
     }
-    notifyListeners();
+    _changed();
   }
 
   /// Einrichtung abschliessen.
@@ -265,7 +273,7 @@ class ContiState extends ChangeNotifier {
     await store.markInitialized();
     await device.setSetupDone();
     dataInitialized = true;
-    notifyListeners();
+    _changed();
   }
 
   /// Datei als Beleg in den Datenordner kopieren. Gibt den Beleg zurück.

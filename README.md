@@ -23,13 +23,14 @@ Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständi
 - **Suchen und filtern** nach Jahr, Art, Konto, Kategorie und Text.
 - **Mein Geschäft:** Name, Adresse, IBAN (mit Prüfung, erkennt QR-IBAN), Logo, Unterschrift, Kanton. Jede Person richtet ihr eigenes Geschäft ein, nichts davon steht im Programm.
 - **Import** aus der früheren Buchhaltungs-App (Datei `.json`), mit Vorschau. Ein zweiter Import erzeugt nichts doppelt.
+- **Abgleich über Dropbox** zwischen Windows und Android: beim Start, alle zwei Minuten und kurz nach jeder Änderung. Was zwei Geräte ohne Netz erfassen, wird zusammengeführt. Die Daten liegen in deiner Dropbox im Ordner „Apps“.
 - **Sicherungen:** automatisch einmal am Tag, dazu von Hand als ZIP-Datei. Einspielen löscht nie etwas.
 - **Hell und dunkel**, Deutsch und Englisch. Bedienbar mit Finger, Stift, Maus und Tastatur.
 - **Updates** direkt in der App: *Einstellungen → Über Conti → Nach Updates suchen*.
 
 ## Kommt bald
 
-- [ ] Abgleich über **Dropbox** zwischen Windows und Android
+- [x] Abgleich über **Dropbox** zwischen Windows und Android
 - [ ] **Kunden, Produkte und Aufträge** (Gig, Lektionen-Abo, Grafik-Auftrag …) und **Aufgaben** mit Fristen-Ampel
 - [ ] **Rechnungen** als PDF mit **Schweizer QR-Zahlteil**, Zahlungen verbuchen, Mahnungen
 - [ ] **Jahresabschluss** für die Steuererklärung (für alle Kantone, zuerst Luzern)
@@ -44,7 +45,7 @@ Unter [Releases](https://github.com/rawkhawk0663/conti/releases/latest) liegt di
 
 ## Deine Daten
 
-Conti hat kein Konto und keinen Server. Alles liegt auf deinen Geräten (unter Windows in `%APPDATA%\Conti\Conti\Daten`) und später in deiner eigenen Dropbox. Gelöschtes bleibt als Vermerk erhalten und lässt sich zurückholen, weil Buchhaltungsunterlagen 10 Jahre aufbewahrt werden müssen.
+Conti hat kein Konto und keinen Server. Alles liegt auf deinen Geräten (unter Windows in `%APPDATA%\Conti\Conti\Daten`) und, wenn du es verbindest, in deiner eigenen Dropbox. Gelöschtes bleibt als Vermerk erhalten und lässt sich zurückholen, weil Buchhaltungsunterlagen 10 Jahre aufbewahrt werden müssen.
 
 ## Lizenz
 

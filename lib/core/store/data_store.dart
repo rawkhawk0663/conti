@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -60,6 +61,22 @@ class DataStore {
 
   final String root;
 
+  /// Immer nur ein Schreibvorgang auf einmal (Speichern und Abgleich lesen,
+  /// führen zusammen und schreiben, ohne dass etwas dazwischenkommt).
+  Future<void>? _last;
+
+  Future<T> withLock<T>(Future<T> Function() job) async {
+    final previous = _last;
+    final done = Completer<void>();
+    _last = done.future;
+    try {
+      if (previous != null) await previous;
+      return await job();
+    } finally {
+      done.complete();
+    }
+  }
+
   static const marker = 'conti.json';
 
   String pathOf(String relative) => p.join(root, relative);
@@ -83,8 +100,10 @@ class DataStore {
   }
 
   /// Markierungsdatei schreiben (beim Einrichten).
-  Future<void> markInitialized() =>
-      _file(marker).write({'format': 'conti-daten', 'version': 1, 'created': DateTime.now().toUtc().toIso8601String()});
+  Future<void> markInitialized() => withLock(() async {
+    if (await File(p.join(root, marker)).exists()) return;
+    await _file(marker).write({'format': 'conti-daten', 'version': 1, 'created': DateTime.now().toUtc().toIso8601String()});
+  });
 
   Future<List<T>> _loadList<T>(String name, T Function(Map<String, dynamic>) fromJson) async {
     final j = await _file(name).read();
@@ -112,7 +131,7 @@ class DataStore {
     String format,
     List<T> items,
     T Function(Map<String, dynamic>) fromJson,
-  ) async {
+  ) => withLock(() async {
     final f = _file(name);
     final disk = [for (final m in (await f.read()).maps('items')) fromJson(m)];
     final merged = mergeById(items, disk);
@@ -122,7 +141,7 @@ class DataStore {
       'items': [for (final x in merged) x.toJson()],
     });
     return merged;
-  }
+  });
 
   Future<List<Account>> saveAccounts(List<Account> a) => saveList('konten.json', 'conti-konten', a, Account.fromJson);
   Future<List<Category>> saveCategories(List<Category> c) =>
@@ -137,7 +156,7 @@ class DataStore {
   /// Verschiebt man eine Buchung in ein anderes Jahr, müssen beide Jahre
   /// gespeichert werden: Im alten bleibt ein Grabstein unter derselben ID
   /// liegen, der aber älter ist und deshalb beim Laden nicht gewinnt.
-  Future<List<Entry>> saveEntries(List<Entry> all, Set<int> years) async {
+  Future<List<Entry>> saveEntries(List<Entry> all, Set<int> years) => withLock(() async {
     final byId = {for (final e in all) e.id: e};
     for (final year in years) {
       final f = JsonFile(p.join(root, 'buchungen', '$year.json'));
@@ -160,9 +179,9 @@ class DataStore {
       }
     }
     return byId.values.toList();
-  }
+  });
 
-  Future<Business> saveBusiness(Business b) async {
+  Future<Business> saveBusiness(Business b) => withLock(() async {
     final f = _file('geschaeft.json');
     final diskJson = await f.read();
     if (diskJson.isNotEmpty) {
@@ -171,11 +190,14 @@ class DataStore {
     }
     await f.write(b.toJson());
     return b;
-  }
+  });
 
   /// Datei in den Datenordner legen (z. B. einen Beleg). [relative]: Ziel
   /// relativ zum Datenordner.
-  Future<File> putFile(String relative, List<int> bytes) async {
+  Future<File> putFile(String relative, List<int> bytes) => withLock(() => writeBytesUnlocked(relative, bytes));
+
+  /// Datei schreiben, ohne die Sperre zu nehmen (nur innerhalb von [withLock]).
+  Future<File> writeBytesUnlocked(String relative, List<int> bytes) async {
     final f = File(pathOf(relative));
     await f.parent.create(recursive: true);
     final tmp = File('${f.path}.tmp');

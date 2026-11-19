@@ -8,6 +8,7 @@ import '../../core/model/entry.dart';
 import '../../core/model/synced.dart';
 import '../../core/money.dart';
 import '../../widgets/visuals.dart';
+import '../sync/sync_page.dart';
 import 'entry_editor.dart';
 import 'entry_tile.dart';
 
@@ -114,7 +115,7 @@ class _EntriesScreenState extends State<EntriesScreen> {
     final filtered = _kind != null || _accountId != null || _categoryId != null || _search.text.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Buchungen', 'Entries'))),
+      appBar: AppBar(title: Text(tr('Buchungen', 'Entries')), actions: const [SyncStatusButton(), SizedBox(width: 4)]),
       floatingActionButton: GradientFab(
         label: tr('Buchung', 'Entry'),
         icon: Icons.add,

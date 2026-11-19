@@ -8,6 +8,7 @@ import '../../core/model/entry.dart';
 import '../../core/money.dart';
 import '../../widgets/visuals.dart';
 import '../entries/entry_editor.dart';
+import '../sync/sync_page.dart';
 import '../entries/entry_tile.dart';
 
 /// Startseite: Gewinn des Jahres, Konten, Monate, letzte Buchungen.
@@ -44,6 +45,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
       appBar: AppBar(
         title: Text(name.isEmpty ? 'Conti' : name),
         actions: [
+          const SyncStatusButton(),
           if (years.length > 1)
             Padding(
               padding: const EdgeInsets.only(right: 12),

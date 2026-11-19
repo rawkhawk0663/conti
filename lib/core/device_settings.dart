@@ -64,4 +64,29 @@ class DeviceSettings {
     _data['lastAccountId'] = id;
     return _save();
   }
+
+  /// Dauerhafter Dropbox-Zugang dieses Geräts (null = nicht verbunden).
+  String? get dropboxToken => _data['dropboxToken'] as String?;
+
+  /// Konto für die Anzeige, z. B. „Anna Muster (anna@…)“.
+  String? get dropboxAccount => _data['dropboxAccount'] as String?;
+
+  Future<void> setDropbox({String? token, String? account}) {
+    if (token == null) {
+      _data.remove('dropboxToken');
+      _data.remove('dropboxAccount');
+    } else {
+      _data['dropboxToken'] = token;
+      if (account != null) _data['dropboxAccount'] = account;
+    }
+    return _save();
+  }
+
+  /// Zeitpunkt des letzten erfolgreichen Abgleichs (UTC, ISO).
+  String? get lastSync => _data['lastSync'] as String?;
+
+  Future<void> setLastSync(String iso) {
+    _data['lastSync'] = iso;
+    return _save();
+  }
 }

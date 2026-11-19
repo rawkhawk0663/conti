@@ -32,7 +32,7 @@ Conti is a simple cash book for sole traders and freelancers: income, expenses, 
 - **Import** from the previous bookkeeping app (`.json` file), with a preview. Importing twice creates no duplicates.
 - **Sync via Dropbox** between Windows and Android: at start-up, every two minutes and shortly after every change. What two devices record offline is merged. The data lives in your Dropbox in the “Apps” folder.
 - **Backups:** automatically once a day, plus by hand as a ZIP file. Restoring never deletes anything.
-- **Light and dark**, German and English. Works with finger, pen, mouse and keyboard. Right-click (or a long press) opens a menu on entries, clients, orders, products and tasks.
+- **Light and dark**, German and English. Works with finger, pen, mouse and keyboard. Right-click (or a long press) opens a menu on entries, clients, orders, products and tasks. Escape closes the open page. On the computer there is no title bar, just three round window buttons at the top right; drag the window by the logo.
 - **Updates** right in the app: *Settings → About Conti → Check for updates*.
 
 ## Coming soon

@@ -1,18 +1,17 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:window_manager/window_manager.dart';
 
 import 'app/error_log.dart';
 import 'app/l10n.dart';
 import 'app/reminders.dart';
 import 'app/theme.dart';
 import 'app/updater.dart';
+import 'app/window_buttons.dart';
 import 'core/backup.dart';
 import 'core/conti_state.dart';
 import 'core/sync/sync_controller.dart';
@@ -24,7 +23,8 @@ Future<void> main() async {
   final support = (await getApplicationSupportDirectory()).path;
   ErrorLog.install(support);
   _registerFontLicenses();
-  await _prepareWindow();
+  // Windows: maximiert, ohne Titelleiste (eigene Fensterknöpfe oben rechts).
+  await prepareWindow();
   final state = ContiState(support);
   await state.load();
   final sync = SyncController(state)..start();
@@ -51,24 +51,6 @@ Future<void> main() async {
   runApp(ContiApp(state: state, sync: sync));
 }
 
-/// Windows: maximiert öffnen, mit dem Namen der App im Titel.
-Future<void> _prepareWindow() async {
-  if (kIsWeb || !Platform.isWindows) return;
-  try {
-    await windowManager.ensureInitialized();
-    await windowManager.waitUntilReadyToShow(
-      const WindowOptions(title: 'Conti', minimumSize: Size(420, 560)),
-      () async {
-        await windowManager.maximize();
-        await windowManager.show();
-        await windowManager.focus();
-      },
-    );
-  } catch (e, st) {
-    ErrorLog.record(e, st, where: 'Fenster vorbereiten');
-  }
-}
-
 void _registerFontLicenses() {
   LicenseRegistry.addLicense(() async* {
     for (final (name, file) in const [
@@ -82,6 +64,30 @@ void _registerFontLicenses() {
       ], await rootBundle.loadString('assets/fonts/$file'));
     }
   });
+}
+
+/// Für die Escape-Taste: die oberste Seite schliessen.
+final _navigator = GlobalKey<NavigatorState>();
+
+/// Escape schliesst die oberste Seite (Buchung, Auftrag …), wie das Kreuz
+/// oben links (Wunsch des Besitzers). Ist ein Menü oder Fenster offen, das
+/// sich selbst schliessen kann, geht zuerst dieses zu.
+KeyEventResult _onEscape(FocusNode node, KeyEvent event) {
+  if (event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.escape) return KeyEventResult.ignored;
+  final ctx = FocusManager.instance.primaryFocus?.context;
+  if (ctx != null) {
+    // Ein Textfeld hält Escape nicht zurück, sonst ginge die Seite mit dem Cursor im Feld nie zu.
+    final inText = ctx.findAncestorStateOfType<EditableTextState>() != null;
+    final action = inText ? null : Actions.maybeFind<DismissIntent>(ctx);
+    if (action != null && action.isEnabled(const DismissIntent())) {
+      Actions.invoke(ctx, const DismissIntent());
+      return KeyEventResult.handled;
+    }
+  }
+  final nav = _navigator.currentState;
+  if (nav == null || !nav.canPop()) return KeyEventResult.ignored;
+  nav.maybePop();
+  return KeyEventResult.handled;
 }
 
 class ContiApp extends StatelessWidget {
@@ -103,6 +109,13 @@ class ContiApp extends StatelessWidget {
             listenable: state,
             builder: (context, _) => MaterialApp(
               title: 'Conti',
+              navigatorKey: _navigator,
+              builder: (context, child) => Focus(
+                canRequestFocus: false,
+                skipTraversal: true,
+                onKeyEvent: _onEscape,
+                child: WindowButtonsOverlay(child: child ?? const SizedBox.shrink()),
+              ),
               debugShowCheckedModeBanner: false,
               theme: buildContiTheme(Brightness.light),
               darkTheme: buildContiTheme(Brightness.dark),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/l10n.dart';
+import '../../app/window_buttons.dart';
 import '../../app/theme.dart';
 import '../../core/conti_state.dart';
 import '../../core/dates.dart';
@@ -75,6 +76,8 @@ class _SyncPageState extends State<SyncPage> {
 
   Future<void> _connectBrowser() => _guard(() async {
     await SyncScope.of(context).connectWithBrowser(_openBrowser);
+    // Nach der Anmeldung im Browser Conti wieder nach vorne holen.
+    await bringWindowToFront();
     await _afterConnect();
   });
 

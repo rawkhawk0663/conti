@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/l10n.dart';
+import '../../app/window_buttons.dart';
 import '../../widgets/visuals.dart';
 import '../clients/clients_screen.dart';
 import '../entries/entries_screen.dart';
@@ -53,7 +54,10 @@ class _HomeShellState extends State<HomeShell> {
                 NavigationRail(
                   selectedIndex: _index,
                   onDestinationSelected: _go,
-                  leading: const Padding(padding: EdgeInsets.only(top: 12, bottom: 20), child: ContiMark(size: 40)),
+                  // Am Logo verschiebt man das Fenster, doppelt antippen maximiert.
+                  leading: const WindowDragArea(
+                    child: Padding(padding: EdgeInsets.only(top: 12, bottom: 20), child: ContiMark(size: 40)),
+                  ),
                   destinations: [
                     for (final (icon, sel, label) in items)
                       NavigationRailDestination(icon: Icon(icon), selectedIcon: Icon(sel), label: Text(label)),

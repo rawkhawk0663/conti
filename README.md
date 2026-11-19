@@ -32,7 +32,7 @@ Conti ist ein Kassenbuch („Milchbüechli“) für Einzelfirmen und Selbständi
 - **Import** aus der früheren Buchhaltungs-App (Datei `.json`), mit Vorschau. Ein zweiter Import erzeugt nichts doppelt.
 - **Abgleich über Dropbox** zwischen Windows und Android: beim Start, alle zwei Minuten und kurz nach jeder Änderung. Was zwei Geräte ohne Netz erfassen, wird zusammengeführt. Die Daten liegen in deiner Dropbox im Ordner „Apps“.
 - **Sicherungen:** automatisch einmal am Tag, dazu von Hand als ZIP-Datei. Einspielen löscht nie etwas.
-- **Hell und dunkel**, Deutsch und Englisch. Bedienbar mit Finger, Stift, Maus und Tastatur. Rechtsklick (oder langes Drücken) öffnet bei Buchungen, Kunden, Aufträgen, Produkten und Aufgaben ein Menü.
+- **Hell und dunkel**, Deutsch und Englisch. Bedienbar mit Finger, Stift, Maus und Tastatur. Rechtsklick (oder langes Drücken) öffnet bei Buchungen, Kunden, Aufträgen, Produkten und Aufgaben ein Menü. Escape schliesst die offene Seite. Am Computer ohne Titelleiste, mit drei runden Fensterknöpfen oben rechts; verschieben am Logo.
 - **Updates** direkt in der App: *Einstellungen → Über Conti → Nach Updates suchen*.
 
 ## Kommt bald

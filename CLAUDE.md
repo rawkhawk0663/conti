@@ -31,6 +31,8 @@ Der Bauplan liegt als Artifact „Conti Bauplan“ beim Besitzer. Pakete:
 - „Neu“/„Hinzufügen“ immer als schwebender Knopf unten rechts (`GradientFab`), Listen darunter brauchen unten ~110 Punkte Platz. Hinweise (`Tooltip`) nur mit der Maus.
 - **Kontextmenüs** (Wunsch des Besitzers): Rechtsklick *und* langes Drücken, über `ContextMenuArea` und `showContextMenu` (`lib/widgets/context_menu.dart`). Auf dem Computer erscheint das Menü an der Stelle des Zeigers bzw. Fingers, auf dem Handy als Blatt von unten. Neue Listen bekommen das auch. Löschen aus dem Menü mit „Rückgängig“ (`showUndo`).
 - Navigation: ab 840 Punkten Breite Leiste links (`NavigationRail`), sonst unten (`NavigationBar`), `lib/features/shell/home_shell.dart`.
+- **Fenster am Computer** (Wunsch des Besitzers): ohne Windows-Titelleiste (`prepareWindow`, `TitleBarStyle.hidden`). Oben rechts drei runde Knöpfe gelb/grün/rot für Minimieren/Maximieren/Schliessen (`WindowButtonsOverlay` in `lib/app/window_buttons.dart`, über allen Seiten). Die AppBar lässt rechts `windowButtonsWidth` frei (`actionsPadding` im Theme). Verschieben am Logo oben in der Leiste (`WindowDragArea`, doppelt klicken maximiert).
+- **Escape** schliesst die oberste Seite (Buchung, Auftrag …) wie das Kreuz, ein offenes Menü oder Fenster zuerst (`_onEscape` in `lib/main.dart`). Auch mit dem Cursor in einem Textfeld.
 - App-Symbol: `tool/make_icon.py` (Verlauf Pink → Violett, weisses „C“ mit Punkt). Schriften: feste Schnitte aus `tool/make_fonts.py`.
 
 ## Daten

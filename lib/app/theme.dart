@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'window_buttons.dart';
+
 /// Farben von Conti: dunkle Karten mit leuchtenden Verläufen, dazu ein heller
 /// Modus. Die Verläufe haben eine feste Bedeutung:
 /// - Mint-Blau: Einnahmen, bezahlt
@@ -153,6 +155,8 @@ ThemeData buildContiTheme(Brightness b) {
       elevation: 0,
       scrolledUnderElevation: 0,
       titleTextStyle: text.titleLarge?.copyWith(color: ink, fontSize: 22),
+      // Rechts Platz für die Fensterknöpfe (am Computer).
+      actionsPadding: hasWindowButtons ? const EdgeInsets.only(right: windowButtonsWidth) : null,
       foregroundColor: ink,
     ),
     cardTheme: CardThemeData(

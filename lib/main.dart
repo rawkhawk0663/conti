@@ -84,10 +84,15 @@ KeyEventResult _onEscape(FocusNode node, KeyEvent event) {
       return KeyEventResult.handled;
     }
   }
-  final nav = _navigator.currentState;
-  if (nav == null || !nav.canPop()) return KeyEventResult.ignored;
-  nav.maybePop();
-  return KeyEventResult.handled;
+  // Zuerst, was über allem liegt (z. B. eine Seite vor der Einrichtung),
+  // dann die offene Seite im sichtbaren Bereich der Leiste.
+  for (final nav in [_navigator.currentState, ShellNav.current]) {
+    if (nav != null && nav.canPop()) {
+      nav.maybePop();
+      return KeyEventResult.handled;
+    }
+  }
+  return KeyEventResult.ignored;
 }
 
 class ContiApp extends StatelessWidget {

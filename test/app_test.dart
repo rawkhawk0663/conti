@@ -115,4 +115,34 @@ void main() {
     expect(find.text('Sichern'), findsNothing);
     await tester.runAsync(() => dir.delete(recursive: true));
   });
+  testWidgets('Leiste bleibt bei offener Buchung, jeder Bereich behält seine Seite', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final dir = await tester.runAsync(() => Directory.systemTemp.createTemp('conti-rail-'));
+    final s = ContiState(dir!.path);
+    await tester.runAsync(() async {
+      await s.load();
+      await s.finishSetup();
+    });
+    L10n.language.value = AppLanguage.de;
+    await tester.pumpWidget(ContiApp(state: s));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Buchung').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Neue Buchung'), findsOneWidget);
+    expect(find.byType(NavigationRail), findsOneWidget);
+    // Zu den Kunden und zurück: die Buchung ist noch offen.
+    await tester.tap(find.text('Kunden').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Neue Buchung'), findsNothing);
+    await tester.tap(find.text('Übersicht').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Neue Buchung'), findsOneWidget);
+    // Nochmals auf „Übersicht“: zurück zur ersten Seite.
+    await tester.tap(find.text('Übersicht').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Neue Buchung'), findsNothing);
+    await tester.runAsync(() => dir.delete(recursive: true));
+  });
 }
